@@ -1,0 +1,74 @@
+<div
+  class="modal fade"
+  id="search-users-modal"
+  aria-hidden="true"
+  aria-labelledby="search-users-modal"
+  tabindex="-1"
+>
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border border-light border-2">
+      <div class="modal-body text-center mx-5">
+        <div class="input-group mb-1">
+          <div class="form-floating">
+            <input
+              type="search"
+              class="form-control"
+              placeholder="Search"
+              name="search"
+              id="search_input"
+            />
+            <label for="search_input">Search</label>
+            <span class="invalid-tooltip">This user does not exist </span>
+          </div>
+          <button type="button" class="btn btn-secondary">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+        </div>
+      </div>
+      <hr class="border border-light border-1 m-0 mt-2" />
+      <div class="user-cards" id="user_cards_container"></div>
+      <template id="user_card_template">
+          <div class="user-card">
+            <div class="header" id="data_header"></div>
+            <div class="body" id="data_body"></div>
+          </div>
+      </template>
+    </div>
+  </div>
+</div>
+<script>
+    const searchInput = document.getElementById("search_input");
+    const userCardsContainer = document.getElementById("user_cards_container");
+    const userCardTemplate = document.getElementById("user_card_template");
+    const dataHeader = document.getElementById("data_header");
+    const dataBody = document.getElementById("data_body");
+
+    let users = [];
+
+    searchInput.addEventListener("change", (e) => {
+        let input = e.target.value.toLowerCase();
+        fetch('search', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({input})
+        }).then(res => {
+            res.json()
+        }).then(data => {
+            // console.log(data)
+        }).catch(err => {
+            console.error(err);
+            return undefined;
+        })
+    });
+
+    searchInput.addEventListener("input", (e) => {
+        users.forEach((user) => {
+            const isVisible = user.username.toLowerCase().includes(input);
+            user.element.classList.toggle("hide", !isVisible);
+        });
+    });
+
+</script>

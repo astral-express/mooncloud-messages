@@ -3,7 +3,7 @@ var password = document.getElementById("password");
 var confirm_password = document.getElementById("confirm_password");
 var toggler = document.getElementById("show_password");
 
-togglePasswordVisibility = () => {
+const togglePasswordVisibility = () => {
   if (password.type == "password") {
     password.setAttribute("type", "text");
     confirm_password.setAttribute("type", "text");

@@ -13260,10 +13260,26 @@ legend {
   max-height: 90vh;
 }
 
+#footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+}
+
+#friend_list {
+  border-bottom: 1px solid rgba(234, 57, 184, 0.4);
+}
+
+#friend_list:last-child {
+  border-bottom: none;
+}
+
 #avatar_preview,
 #user_avatar,
-#user_row_avatar,
-#user_details_avatar {
+#friend_list_avatar,
+#user_details_avatar,
+#chat_user_avatar {
   max-width: 120px;
   height: auto;
   aspect-ratio: 120 / 120;
@@ -13271,26 +13287,30 @@ legend {
 }
 
 #user_avatar,
-#user_row_avatar,
-#user_details_avatar {
+#friend_list_avatar,
+#user_details_avatar,
+#chat_user_avatar {
   max-width: 40px;
   aspect-ratio: 40 / 40;
   border-radius: 50%;
 }
 
-#user_row,
 #user_details,
-#user_row_layout {
+#friend_list_layout,
+#chat_list_container,
+#chat_container,
+#chat_messages_container {
   border: 1px solid var(--bs-pink);
   border-radius: 1em;
 }
 
-#user_row_layout {
+#friend_list_layout,
+#chat_list_container {
   border-color: var(--bs-cyan);
   min-height: 50vh;
 }
 
-#user_row_avatar {
+#friend_list_avatar {
   max-width: 45px;
   aspect-ratio: 45 / 45;
 }
@@ -13300,7 +13320,12 @@ legend {
   aspect-ratio: 75 / 75;
 }
 
-#user_row_username {
+#chat_user_avatar {
+  max-width: 35px;
+  aspect-ratio: 35 / 35;
+}
+
+#friend_list_username {
   font-size: 1.1em;
 }
 
@@ -13323,10 +13348,10 @@ legend {
   cursor: pointer;
 }
 
-#messages_section {
+#chat_list_container,
+#chat_messages_container {
   background-color: var(--bs-dark);
-  min-height: 15vh;
-  min-width: 100%;
+  min-height: 75vh;
   border-radius: 1em;
 }
 
@@ -13341,4 +13366,19 @@ legend {
 
 .popover-arrow {
   display: none !important;
+}
+
+#search_input {
+  font-size: 1.1em;
+}
+
+.user-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.25rem;
+  margin-top: 1rem;
+}
+
+.hide {
+  display: none;
 }

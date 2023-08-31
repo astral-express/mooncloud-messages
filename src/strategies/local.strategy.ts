@@ -17,7 +17,6 @@ passport.deserializeUser(async (id, done) => {
     if (!user) throw new Error("User not found");
     done(null, user);
   } catch (err) {
-    console.log(err);
     done(err, null);
   }
 });
@@ -38,7 +37,6 @@ passport.use(
         if (!isValid) throw new Error("Wrong password");
         done(false, localUser);
       } catch (err) {
-        console.log(err);
         done(err, false);
       }
     }

@@ -100,6 +100,12 @@ usernameField.addEventListener("keyup", (e) => {
 
 let usernameValidation = (username) => {
   let isUsernameValidated = checkIfItsAlphabeticalOrNumeralChar(username);
+  if (isUsernameValidated === null) {
+    usernameSuccessMsg.innerHTML = "";
+    usernameErrorMsg.innerHTML =
+      "Username cannot contain white space characters";
+    return false;
+  }
   if (isUsernameValidated === false) {
     usernameSuccessMsg.innerHTML = "";
     usernameErrorMsg.innerHTML = "Username cannot contain special characters";
@@ -108,7 +114,7 @@ let usernameValidation = (username) => {
     usernameSuccessMsg.innerHTML = "";
     usernameErrorMsg.innerHTML = "Username cannot contain uppercase characters";
     return false;
-  } else if (username.length <= 3) {
+  } else if (username.length <= 2) {
     usernameSuccessMsg.innerHTML = "";
     usernameErrorMsg.innerHTML = "Username must be at least 3 characters long";
     return false;
@@ -127,6 +133,9 @@ let usernameValidation = (username) => {
 let checkIfItsAlphabeticalOrNumeralChar = (str) => {
   for (let i = 0; i < str.length; i++) {
     let char = str[i].charCodeAt(0);
+    if (char >= 0 && char <= 32) {
+      return null;
+    }
     if (char >= 65 && char <= 90) {
       return true;
     }

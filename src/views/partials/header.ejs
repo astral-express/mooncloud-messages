@@ -31,7 +31,11 @@
           class="nav-item d-flex align-items-center justify-content-center my-2 my-lg-0 me-lg-2"
         >
           <a class="mt-1 text-decoration-none text-dark" href="/user/<%= user.username %>">
-            <img id="user_avatar" class="me-1" src="assets/users/uploads/<% if(user.avatar != "" ){ %><%= user.avatar %> <% } else { %><%= user.defaultAvatar %><% } %>" alt="user_avatar" />
+            <% if(user.avatar != "" ) { %>
+            <img id="user_avatar" class="me-1" src="assets/users/uploads/<%= user.avatar %>" alt="user_avatar" />
+            <% } else { %>
+            <img id="user_avatar" class="me-1" src="assets/users/default/<%= user.defaultAvatar %>" alt="user_avatar" />
+            <% } %>
             <strong><%= user.username %></strong>
           </a>
         </li>
