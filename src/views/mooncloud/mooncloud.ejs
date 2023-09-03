@@ -87,7 +87,7 @@
       aria-labelledby="pills-messages-tab"
       tabindex="0"
     >
-      <section id="chat_section" class="d-flex"><%- include("messages_tab.ejs") %></section>
+      <section id="chat_section" class="d-flex justify-content-between"><%- include("messages_tab.ejs") %></section>
     </div>
     <!-- NOTIFICATIONS SECTION -->
     <div
@@ -120,7 +120,6 @@
         <button
           id="pills-friends-tab"
           class="nav-link active"
-          href="/user/<%= user.username %>/friends"
           data-bs-toggle="pill"
           data-bs-target="#pills-friends"
           role="tab"
@@ -136,7 +135,6 @@
         <button
           id="pills-messages-tab"
           class="nav-link"
-          href="/user/<%= user.username %>/messages"
           data-bs-toggle="pill"
           data-bs-target="#pills-messages"
           role="tab"
@@ -150,6 +148,7 @@
       </li>
       <li class="nav-image">
         <img
+          id="envelope_img"
           src="assets/vectors/circle-envelope.vector.png"
           alt="Logo"
           width="38"
@@ -161,7 +160,6 @@
         <button
           id="pills-notifications-tab"
           class="nav-link"
-          href="/user/<%= user.username %>/notifications"
           data-bs-toggle="pill"
           data-bs-target="#pills-notifications"
           role="tab"
@@ -177,7 +175,6 @@
         <button
           id="pills-settings-tab"
           class="nav-link"
-          href="/user/<%= user.username %>/settings"
           data-bs-toggle="pill"
           data-bs-target="#pills-settings"
           role="tab"

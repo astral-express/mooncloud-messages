@@ -49,6 +49,24 @@ export namespace ChatController {
     }
 
     /**
+     * @param username: string
+     * @returns: Array of objects
+     * 
+     * Finds all chat records in db from given user and returns an array of objs
+     */
+    export async function findChats(username: string): Promise<Array<any> | null | undefined> {
+        try {
+            let chats = await chatModel.find({
+                "members.user": username,
+            })
+            if (chats) return chats;
+            else return null;
+        } catch (err: any) {
+            return undefined;
+        }
+    }
+
+    /**
      * @param sender: string
      * @param receiver: string
      * 
@@ -119,13 +137,13 @@ export namespace ChatController {
      * 
      * Loads all of the chat's messages and sends them to the user for front end rendering
      */
-    export async function loadChat(chatID: string): Promise<any | undefined> {
+    export async function loadChat(chatID: string | null | undefined): Promise<any | undefined> {
         try {
             let chat = await chatModel.findOne({
                 _id: chatID,
             })
             if (chat) {
-                console.log(chat.messages);
+                return chat;
             }
         } catch (err: any) {
             return undefined;

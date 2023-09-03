@@ -207,23 +207,42 @@ mongoose.connection.once("open", () => {
                 let chatID = await ChatController.checkIfChatExists(senderUsername, receiverUsername);
                 if (!chatID) {
                     let initiated = await ChatController.initiateChat(senderUsername, receiverUsername);
+                    console.log(initiated)
                     if (!initiated) {
                         return false;
                     };
-                    socket.emit("initiate-chat", initiated);
-                } else {
-                    // let loadedChat = await ChatController.loadChat(chatID);
-                    // if (!loadedChat) {
-                    //     throw new Error("There was an error loading your chat");
-                    // }
-                    // socket.emit("load-chat", loadedChat);
+                    socket.emit("initiate-chat", { initiated });
                 }
+                let chatData = await ChatController.loadChat(chatID);
+                socket.emit("loaded-chat", { chatData });
             } catch (err) {
                 console.error(err);
                 return undefined;
             }
         }
         )
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("messages-tab", async () => {
+            try {
+                let chats = await ChatController.findChats(`${socket.data.username}`);
+                if (chats) {
+                    let chatsData = [];
+                    for (let i = 0; i < chats.length; i++) {
+                        chatsData.push({
+                            id: chats[i]._id,
+                            members: chats[i].members,
+                            messages: chats[i].messages,
+                        });
+                    }
+                    socket.emit("loaded-chats", { chatsData })
+                }
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
     })
 
     server.listen(port, () => logger.info("Server running on port: " + port));

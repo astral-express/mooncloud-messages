@@ -2,6 +2,14 @@ const messagesContainer = document.getElementById("messages_container");
 const messageInputForm = document.getElementById("message_form");
 const messageInput = document.getElementById("message_input");
 const messagesSection = document.getElementById("messages_section");
+const messagesSender = document.getElementById("sender");
+const messageReceived = document.getElementById("received_message");
+const chatBubbles = document.getElementById("chat-bubbles");
+
+const receivedMessagesColumn = document.getElementById(
+  "received_messages_column"
+);
+const sentMessagesColumn = document.getElementById("sent_messages_column");
 
 const sendMessageBtn = document.getElementById("send_message_btn");
 const chatInitiationBtn = document.querySelectorAll(
@@ -29,12 +37,69 @@ function destroyed() {
   socket.off("connect_error");
 }
 
-function appendMessage(message) {
-  const messageElement = document.createElement("p");
-  messageElement.innerText = message;
-  messagesContainer.append(messageElement);
+function appendReceivedMessage(message, from) {
+  const bubbleContainer = document.createElement("div");
+  bubbleContainer.setAttribute("id", "received_messages_column");
+  bubbleContainer.classList.add("d-flex", "flex-column", "me-auto", "pb-2");
+
+  const sender = document.createElement("span");
+  sender.setAttribute("id", "sender");
+  sender.classList.add("ms-1", "small");
+  sender.innerText = from;
+
+  const bubbleTextWrapper = document.createElement("div");
+  bubbleTextWrapper.classList.add(
+    "text-bubble-received",
+    "p-2",
+    "bg-primary",
+    "rounded"
+  );
+
+  const bubbleText = document.createElement("p");
+  bubbleText.setAttribute("id", "received_message");
+  bubbleText.classList.add("message-element", "m-0", "text-white");
+  bubbleText.innerText = message;
+
+  bubbleContainer.append(sender, bubbleTextWrapper);
+  bubbleTextWrapper.append(bubbleText);
+  messagesContainer.append(bubbleContainer);
+  scrollController();
 }
 
+function appendSentMessage(message) {
+  const bubbleContainer = document.createElement("div");
+  bubbleContainer.setAttribute("id", "sent_messages_column");
+  bubbleContainer.classList.add("d-flex", "flex-column", "ms-auto", "pb-2");
+
+  const sender = document.createElement("span");
+  sender.setAttribute("id", "you");
+  sender.classList.add("text-secondary", "ms-auto", "me-1", "small");
+  sender.innerText = "You";
+
+  const bubbleTextWrapper = document.createElement("div");
+  bubbleTextWrapper.classList.add(
+    "text-bubble-sent",
+    "p-2",
+    "bg-secondary",
+    "rounded"
+  );
+
+  const bubbleText = document.createElement("p");
+  bubbleText.setAttribute("id", "sent_message");
+  bubbleText.classList.add("message-element", "m-0", "text-white");
+  bubbleText.innerText = message;
+
+  bubbleContainer.append(sender, bubbleTextWrapper);
+  bubbleTextWrapper.append(bubbleText);
+  messagesContainer.append(bubbleContainer);
+  scrollController();
+}
+
+function scrollController() {
+  //   if (messagesContainer.scrollTop <= messagesContainer.scrollHeight - 633) {
+  messagesContainer.scrollTo(0, messagesContainer.scrollHeight);
+  //   }
+}
 //
 
 // SOCKETS
@@ -52,20 +117,50 @@ socket.on("session", ({ sessionID, userID, username }) => {
 });
 
 socket.on("receive-private-message", ({ content, from, to }) => {
-  console.log(content, from, to);
-  appendMessage(content);
+  appendReceivedMessage(content, from);
+  scrollController();
 });
 
-socket.on("initiate-chat", (initiated) => {
-    console.log(initiated)
-    if(initiated !== true) {
-        throw new Error("There was an error initiating the chat, please try again")
+socket.on("initiate-chat", ({ initiated }) => {
+  console.log(initiated);
+  if (initiated !== true) {
+    throw new Error("There was an error initiating the chat, please try again");
+  }
+});
+
+socket.on("loaded-chats", ({ chatsData }) => {
+  for (let i = 0; i < chatsData.length; i++) {
+    for (let x = 0; x < chatsData[i].messages.length; x++) {
+      if (chatsData[i].messages[x].user === socket.username) {
+        appendSentMessage(chatsData[i].messages[x].message);
+      } else {
+        appendReceivedMessage(
+          chatsData[i].messages[x].message,
+          chatsData[i].messages[x].user
+        );
+      }
     }
+  }
+  scrollController();
+});
 
-
-})
-
-// socket.on("loaded-chat", data);
+socket.on("loaded-chat", ({ chatData }) => {
+  if (chatData.messages.length <= 0) {
+    console.log("empty chat");
+  } else {
+    for (let i = 0; i < chatData.messages.length; i++) {
+      if (chatData.messages[i].user === socket.username) {
+        appendSentMessage(chatData.messages[i].message);
+      } else {
+        appendReceivedMessage(
+            chatData.messages[i].message,
+            chatData.messages[i].user
+        );
+      }
+    }
+    scrollController();
+  }
+});
 
 // EVENT LISTENERS
 messageInputForm.addEventListener("submit", (e) => {
@@ -75,6 +170,7 @@ messageInputForm.addEventListener("submit", (e) => {
   if (message === "" || null) return;
   socket.emit("send-private-message", message, to);
   messageInput.value = "";
+  appendSentMessage(message);
 });
 
 chatInitiationBtn.forEach((button) => {
@@ -93,8 +189,13 @@ chatInitiationBtn.forEach((button) => {
 
       pillsMessages.className = "tab-pane fade active show";
       pillsMessagesTab.className = "nav-link active";
-      pillsMessages.ariaSelected = "true";
       pillsMessagesTab.removeAttribute("tabindex");
     }
   });
+});
+
+pillsMessagesTab.addEventListener("click", (e) => {
+  if ((pillsMessages.className = "tab-pane fade active show")) {
+    socket.emit("messages-tab");
+  }
 });

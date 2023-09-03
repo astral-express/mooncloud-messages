@@ -1,21 +1,38 @@
-<div id="chat_list_container" class="ms-3">
-    <div role="tabpanel">
-        <!-- List group -->
-        <div class="list-group" id="myList" role="tablist">
-            <div class="list-group-item list-group-item-action active" data-bs-toggle="list" href="#home" role="tab">Home</div>
+<div role="tabpanel" id="chat_friend_list" class="p-2">
+    <!-- List group -->
+    <div class="list-group" role="tablist">
+        <div class="list-group-item list-group-item-action active" data-bs-toggle="list" href="#home" role="tab">
+            <div class="user-info d-flex justify-content-between align-items-center">
+                <div class="user-avatar">
+                    <!-- <img id="friend_list_avatar" class="me-1" src="assets/users/uploads/" alt="user-row-avatar" /> -->
+                    <img id="friend_list_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="user-row-avatar" />
+                </div>
+                <div class="username px-2 me-2 py-2 py-md-0">
+                    <p id="friend_list_username" class="m-0">username</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-<div id="chat_messages_container" class="ms-3 d-flex flex-column">
-    <!-- Tab panes -->
-    <div class="tab-content">
-        <div class="tab-pane active" id="home" role="tabpanel">a...</div>
-        <div id="messages_container">message</div>
-        <form id="message_form">
-            <div class="input-group mb-3">
-                <input id="message_input" type="text" class="form-control text-white" placeholder="Type a message to..." aria-label="Recipient's username" aria-describedby="button-addon2">
-                <button id="send_message_btn" class="btn btn-secondary" type="submit">Send <i class="fa-solid fa-chevron-right"></i></button>
-              </div>
-        </form>
+<!-- Tab panels -->
+<div class="tab-content">
+    <div class="tab-pane active" id="home" role="tabpanel">
+        <div id="chat_container" class="d-flex flex-column justify-content-between ms-3 p-2">
+            <div id="chat-bubbles" class="d-flex flex-column pb-2">
+                <!-- <span id="chat-date" class="m-2 small mx-auto">Sun 13:42</span> -->
+                <div id="messages_container" class="d-flex flex-column justify-content-between p-2"></div>
+            </div>
+            <div class="chat-input">
+                <form id="message_form" class="mb-1">
+                    <div class="input-group">
+                        <input id="message_input" type="text" class="form-control text-white"
+                            placeholder="Type a message..." aria-label="Recipient's username"
+                            aria-describedby="button-addon2">
+                        <button id="send_message_btn" class="btn btn-secondary" type="submit">Send <i
+                                class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>

@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { FriendshipController } from "../controllers/friendship.controller";
 import { LocalUsersController } from "../controllers/local_users.controller";
-import { ChatController } from "../controllers/chat.controller";
 var router = Router();
 
 router.get("/:id", async (req, res) => {
