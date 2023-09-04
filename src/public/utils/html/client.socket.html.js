@@ -1,3 +1,6 @@
+const tabContent = document.getElementById("chat_tab_content");
+const chatListGroup = document.getElementById("chat_list_group");
+
 const messagesContainer = document.getElementById("messages_container");
 const messageInputForm = document.getElementById("message_form");
 const messageInput = document.getElementById("message_input");
@@ -95,6 +98,55 @@ function appendSentMessage(message) {
   scrollController();
 }
 
+function chatMessagesLoad(chatData) {
+  for (let i = 0; i < chatData.length; i++) {
+    for (let x = 0; x < chatData[i].messages.length; x++) {
+      if (chatData[i].messages[x].user === socket.username) {
+        appendSentMessage(chatData[i].messages[x].message);
+      } else {
+        appendReceivedMessage(
+          chatData[i].messages[x].message,
+          chatData[i].messages[x].user
+        );
+      }
+    }
+  }
+}
+
+function chatsListLoad(chatsData) {
+  for (let i = 0; i < chatsData.length; i++) {
+    const listGroupItem = document.createElement("div");
+    listGroupItem.classList.add("list-group-item", "list-group-item-action");
+    listGroupItem.setAttribute("data-bs-toggle", "list");
+    listGroupItem.setAttribute("role", "tab");
+    for (let x = 0; x < chatsData[i].members.length; x++) {
+      if (chatsData[i].members[x].user !== socket.username) {
+        listGroupItem.setAttribute(
+          "href",
+          `#${chatsData[i].members[x].user}-chat`
+        );
+      } else break;
+    }
+
+    const listGroupItemWrapper = document.createElement("div");
+    listGroupItemWrapper.classList.add("d-flex", "justify-content-between", "align-items-center");
+
+    const userAvatar = document.createElement("div");
+    userAvatar.classList.add("user-avatar");
+
+    const avatar = document.createElement("img");
+    avatar.setAttribute("id", "friend_list_avatar");
+    avatar.setAttribute("src", `assets/users/uploads/${}`);
+    avatar.setAttribute("alt", "chat-list-user-avatar");
+    avatar.classList.add("me-1");
+
+    const userChatListInfo = document.createElement("div");
+    userChatListInfo.classList.add("user-chat", "px-2", "me-2", "py-2", "py-md-0");
+
+
+  }
+}
+
 function scrollController() {
   //   if (messagesContainer.scrollTop <= messagesContainer.scrollHeight - 633) {
   messagesContainer.scrollTo(0, messagesContainer.scrollHeight);
@@ -128,39 +180,28 @@ socket.on("initiate-chat", ({ initiated }) => {
   }
 });
 
-socket.on("loaded-chats", ({ chatsData }) => {
-  for (let i = 0; i < chatsData.length; i++) {
-    for (let x = 0; x < chatsData[i].messages.length; x++) {
-      if (chatsData[i].messages[x].user === socket.username) {
-        appendSentMessage(chatsData[i].messages[x].message);
-      } else {
-        appendReceivedMessage(
-          chatsData[i].messages[x].message,
-          chatsData[i].messages[x].user
-        );
-      }
-    }
-  }
+socket.on("pre-loaded-chats", ({ chatsData }) => {
+  chatsListLoad(chatsData);
   scrollController();
 });
 
-socket.on("loaded-chat", ({ chatData }) => {
-  if (chatData.messages.length <= 0) {
-    console.log("empty chat");
-  } else {
-    for (let i = 0; i < chatData.messages.length; i++) {
-      if (chatData.messages[i].user === socket.username) {
-        appendSentMessage(chatData.messages[i].message);
-      } else {
-        appendReceivedMessage(
-            chatData.messages[i].message,
-            chatData.messages[i].user
-        );
-      }
-    }
-    scrollController();
-  }
-});
+// socket.on("loaded-chat", ({ chatData }) => {
+//   if (chatData.messages.length <= 0) {
+//     console.log("empty chat");
+//   } else {
+//     for (let i = 0; i < chatData.messages.length; i++) {
+//       if (chatData.messages[i].user === socket.username) {
+//         appendSentMessage(chatData.messages[i].message);
+//       } else {
+//         appendReceivedMessage(
+//           chatData.messages[i].message,
+//           chatData.messages[i].user
+//         );
+//       }
+//     }
+//     scrollController();
+//   }
+// });
 
 // EVENT LISTENERS
 messageInputForm.addEventListener("submit", (e) => {

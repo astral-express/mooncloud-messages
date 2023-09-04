@@ -200,28 +200,29 @@ mongoose.connection.once("open", () => {
         })
     })
 
-    io.on("connection", (socket) => {
-        socket.on("selected-user", async (receiverUsername) => {
-            let senderUsername: string = socket.data.username;
-            try {
-                let chatID = await ChatController.checkIfChatExists(senderUsername, receiverUsername);
-                if (!chatID) {
-                    let initiated = await ChatController.initiateChat(senderUsername, receiverUsername);
-                    console.log(initiated)
-                    if (!initiated) {
-                        return false;
-                    };
-                    socket.emit("initiate-chat", { initiated });
-                }
-                let chatData = await ChatController.loadChat(chatID);
-                socket.emit("loaded-chat", { chatData });
-            } catch (err) {
-                console.error(err);
-                return undefined;
-            }
-        }
-        )
-    })
+    // io.on("connection", (socket) => {
+    //     socket.on("selected-user", async (receiverUsername) => {
+    //         let senderUsername: string = socket.data.username;
+    //         try {
+    //             let chatID = await ChatController.checkIfChatExists(senderUsername, receiverUsername);
+    //             if (!chatID) {
+    //                 let initiated = await ChatController.initiateChat(senderUsername, receiverUsername);
+    //                 console.log(initiated)
+    //                 if (!initiated) {
+    //                     return false;
+    //                 };
+    //                 socket.emit("initiate-chat", { initiated });
+    //             } else {
+    //                 let chatData = await ChatController.loadChat(chatID);
+    //                 socket.emit("loaded-chat", { chatData });
+    //             }
+    //         } catch (err) {
+    //             console.error(err);
+    //             return undefined;
+    //         }
+    //     }
+    //     )
+    // })
 
     io.on("connection", (socket) => {
         socket.on("messages-tab", async () => {
@@ -231,12 +232,12 @@ mongoose.connection.once("open", () => {
                     let chatsData = [];
                     for (let i = 0; i < chats.length; i++) {
                         chatsData.push({
-                            id: chats[i]._id,
+                            chatID: chats[i].chatID,
                             members: chats[i].members,
                             messages: chats[i].messages,
                         });
                     }
-                    socket.emit("loaded-chats", { chatsData })
+                    socket.emit("pre-loaded-chats", { chatsData })
                 }
             } catch (err: any) {
                 console.error(err);
