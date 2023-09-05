@@ -1,3 +1,4 @@
+// DOM Selectors
 const tabContent = document.getElementById("chat_tab_content");
 const chatListGroup = document.getElementById("chat_list_group");
 
@@ -24,6 +25,9 @@ const pillsFriendsTab = document.getElementById("pills-friends-tab");
 const pillsMessages = document.getElementById("pills-messages");
 const pillsFriends = document.getElementById("pills-friends");
 const socket = io();
+
+// Variables
+let is_chat_pre_loaded = false;
 
 // FUNCTIONS
 function created() {
@@ -114,37 +118,42 @@ function chatMessagesLoad(chatData) {
 }
 
 function chatsListLoad(chatsData) {
+  var userDetails = [];
+  var userLastMessage;
+  var sender;
   for (let i = 0; i < chatsData.length; i++) {
-    const listGroupItem = document.createElement("div");
-    listGroupItem.classList.add("list-group-item", "list-group-item-action");
-    listGroupItem.setAttribute("data-bs-toggle", "list");
-    listGroupItem.setAttribute("role", "tab");
     for (let x = 0; x < chatsData[i].members.length; x++) {
       if (chatsData[i].members[x].user !== socket.username) {
-        listGroupItem.setAttribute(
-          "href",
-          `#${chatsData[i].members[x].user}-chat`
-        );
-      } else break;
+        userDetails.push({
+          name: chatsData[i].members[x].user,
+          avatar: chatsData[i].members[x].avatar,
+        });
+      }
+      for (let y = 0; y < chatsData[i].messages.length; y++) {
+        sender = chatsData[i].messages[y].user;
+        userLastMessage = chatsData[i].messages[y].message;
+      }
     }
-
-    const listGroupItemWrapper = document.createElement("div");
-    listGroupItemWrapper.classList.add("d-flex", "justify-content-between", "align-items-center");
-
-    const userAvatar = document.createElement("div");
-    userAvatar.classList.add("user-avatar");
-
-    const avatar = document.createElement("img");
-    avatar.setAttribute("id", "friend_list_avatar");
-    avatar.setAttribute("src", `assets/users/uploads/${}`);
-    avatar.setAttribute("alt", "chat-list-user-avatar");
-    avatar.classList.add("me-1");
-
-    const userChatListInfo = document.createElement("div");
-    userChatListInfo.classList.add("user-chat", "px-2", "me-2", "py-2", "py-md-0");
-
-
   }
+  console.log(userDetails);
+  console.log(userLastMessage);
+
+  chatListGroup.innerHTML = userDetails
+    .map(
+      (user) =>
+        `<div class="list-group-item list-group-item-action ${user.name}-chat" data-bs-toggle="list" href="${user.name}-chat" role="tab">
+          <div class="d-flex justify-content-between align-items-center">
+              <div class="user-avatar">
+                  <img id="friend_list_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
+              </div>
+              <div class="user-chat px-2 me-2 py-2 py-md-0">
+                  <p id="friend_list_username" class="m-0 mb-1">${user.name}</p>
+                  <p id="last_message" class="small m-0">${sender}: ${userLastMessage}</p>
+              </div>
+          </div>
+      </div>`
+    )
+    .join(" ");
 }
 
 function scrollController() {
@@ -181,8 +190,10 @@ socket.on("initiate-chat", ({ initiated }) => {
 });
 
 socket.on("pre-loaded-chats", ({ chatsData }) => {
-  chatsListLoad(chatsData);
-  scrollController();
+  if (is_chat_pre_loaded === false) {
+    chatsListLoad(chatsData);
+    scrollController();
+  } else return;
 });
 
 // socket.on("loaded-chat", ({ chatData }) => {

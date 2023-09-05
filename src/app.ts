@@ -174,6 +174,7 @@ mongoose.connection.once("open", () => {
 
     io.on("connection", (socket) => {
         socket.on("send-private-message", async (content, to) => {
+            // illogical db call
             let chatID = await ChatController.checkIfChatExists(socket.data.username, to);
             if (chatID) {
                 await ChatController.sendMessage(socket.data.username, content, chatID);
@@ -227,18 +228,10 @@ mongoose.connection.once("open", () => {
     io.on("connection", (socket) => {
         socket.on("messages-tab", async () => {
             try {
-                let chats = await ChatController.findChats(`${socket.data.username}`);
-                if (chats) {
-                    let chatsData = [];
-                    for (let i = 0; i < chats.length; i++) {
-                        chatsData.push({
-                            chatID: chats[i].chatID,
-                            members: chats[i].members,
-                            messages: chats[i].messages,
-                        });
-                    }
+                let chatsData = await ChatController.findAllChatsOfAUser(`${socket.data.username}`);
+                if (chatsData) {
                     socket.emit("pre-loaded-chats", { chatsData })
-                }
+                } else return null;
             } catch (err: any) {
                 console.error(err);
                 return undefined;

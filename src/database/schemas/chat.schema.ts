@@ -3,9 +3,11 @@ import mongoose from "mongoose";
 type membersType = [
     {
         user: String,
+        avatar: String,
     },
     {
         user: String,
+        avatar: String,
     },
 ]
 
@@ -19,9 +21,11 @@ let membersSchema = new mongoose.Schema<membersType>(
     [
         {
             user: String,
+            avatar: String,
         },
         {
             user: String,
+            avatar: String,
         },
     ]
 )

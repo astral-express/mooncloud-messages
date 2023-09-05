@@ -54,12 +54,22 @@ export namespace ChatController {
      * 
      * Finds all chat records in db from given user and returns an array of objs
      */
-    export async function findChats(username: string): Promise<Array<any> | null | undefined> {
+    export async function findAllChatsOfAUser(username: string): Promise<any | null | undefined> {
         try {
             let chats = await chatModel.find({
                 "members.user": username,
             })
-            if (chats) return chats;
+            if (chats) {
+                let chatsData = [];
+                for (let i = 0; i < chats.length; i++) {
+                    chatsData.push({
+                        chatID: chats[i].chatID,
+                        members: chats[i].members,
+                        messages: chats[i].messages,
+                    });
+                }
+                return chatsData;
+            }
             else return null;
         } catch (err: any) {
             return undefined;
@@ -87,9 +97,11 @@ export namespace ChatController {
                 members: [
                     {
                         user: sender,
+                        avatar: sender,
                     },
                     {
                         user: receiver,
+                        avatar: receiver,
                     }
                 ],
                 messages: [],
