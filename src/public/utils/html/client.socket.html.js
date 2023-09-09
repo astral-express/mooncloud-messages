@@ -1,5 +1,5 @@
 // DOM Selectors
-const tabContent = document.getElementById("chat_tab_content");
+const chatTabContent = document.getElementById("chat_tab_content");
 const chatListGroup = document.getElementById("chat_list_group");
 
 const messagesContainer = document.getElementById("messages_container");
@@ -118,41 +118,83 @@ function chatMessagesLoad(chatData) {
 }
 
 function chatsListLoad(chatsData) {
-  var userDetails = [];
-  var userLastMessage;
-  var sender;
+  let userDetails = [];
   for (let i = 0; i < chatsData.length; i++) {
+    let userObj = {};
     for (let x = 0; x < chatsData[i].members.length; x++) {
       if (chatsData[i].members[x].user !== socket.username) {
-        userDetails.push({
+        userObj = {
           name: chatsData[i].members[x].user,
           avatar: chatsData[i].members[x].avatar,
-        });
-      }
-      for (let y = 0; y < chatsData[i].messages.length; y++) {
-        sender = chatsData[i].messages[y].user;
-        userLastMessage = chatsData[i].messages[y].message;
+        };
       }
     }
+    for (let x = 0; x < chatsData[i].messages.length; x++) {
+      let lastMsgObj = {};
+      if (messagesSender !== socket.username) {
+        lastMsgObj = {
+          sender: "You",
+          lastMessage: chatsData[i].messages[x].message,
+        };
+      } else {
+        lastMsgObj = {
+          sender: chatsData[i].messages[x].user,
+          lastMessage: chatsData[i].messages[x].message,
+        };
+      }
+      Object.assign(userObj, lastMsgObj);
+    }
+    userDetails.push(userObj);
   }
   console.log(userDetails);
-  console.log(userLastMessage);
 
   chatListGroup.innerHTML = userDetails
-    .map(
-      (user) =>
-        `<div class="list-group-item list-group-item-action ${user.name}-chat" data-bs-toggle="list" href="${user.name}-chat" role="tab">
-          <div class="d-flex justify-content-between align-items-center">
-              <div class="user-avatar">
-                  <img id="friend_list_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
-              </div>
-              <div class="user-chat px-2 me-2 py-2 py-md-0">
-                  <p id="friend_list_username" class="m-0 mb-1">${user.name}</p>
-                  <p id="last_message" class="small m-0">${sender}: ${userLastMessage}</p>
-              </div>
+    .map((user) => {
+      if (!user.sender || !user.lastMessage) {
+        return `<div id="friend_list_row" class="list-group-item list-group-item-action ${user.name}-chat" data-bs-toggle="list" href="#${user.name}-chat" role="tab">
+          <div class="d-flex justify-content-left align-items-center">
+            <div class="user-avatar">
+              <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
+            </div>
+            <div class="user-chat px-2 ms-1 my-3 py-md-0">
+              <p id="friend_list_row_username" class="m-0 mb-1 fs-5">${user.name}</p>
+            </div>
           </div>
-      </div>`
-    )
+        </div>`;
+      } else {
+        return `<div id="friend_list_row" class="list-group-item list-group-item-action ${user.name}-chat" data-bs-toggle="list" href="#${user.name}-chat" role="tab">
+          <div class="d-flex justify-content-left align-items-center">
+            <div class="user-avatar">
+              <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
+            </div>
+            <div class="user-chat px-2 ms-1 my-1 py-md-0">
+              <p id="friend_list_row_username" class="m-0 mb-1 fs-5">${user.name}</p>
+              <p id="last_message" class="small m-0">${user.sender}: ${user.lastMessage}</p>
+            </div>
+          </div>
+        </div>`;
+      }
+    })
+    .join(" ");
+
+  chatTabContent.innerHTML = userDetails
+    .map((user) => {
+      return `<div class="tab-pane" id="${user.name}-chat" role="tabpanel">
+        <div id="chat_container" class="d-flex flex-column justify-content-between ms-3 p-2">
+            <div id="chat-bubbles" class="d-flex flex-column pb-2">
+                <div id="messages_container" class="d-flex flex-column justify-content-between p-2"></div>
+            </div>
+            <div class="chat-input">
+                <form id="message_form" class="mb-1">
+                    <div class="input-group">
+                        <input id="message_input" type="text" class="form-control text-white" placeholder="Type a message..." aria-label="Recipient's username" aria-describedby="button-addon2">
+                        <button id="send_message_btn" class="btn btn-secondary" type="submit">Send <i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>`;
+    })
     .join(" ");
 }
 

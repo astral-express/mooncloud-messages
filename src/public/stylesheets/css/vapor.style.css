@@ -5236,7 +5236,7 @@ fieldset:disabled .btn {
 
 .list-group-item-action {
   width: 100%;
-  color: var(--bs-list-group-action-color);
+  color: var(--bs-list-group-action-color); 
   text-align: inherit;
 }
 .list-group-item-action:hover,
@@ -5244,11 +5244,11 @@ fieldset:disabled .btn {
   z-index: 1;
   color: var(--bs-list-group-action-hover-color);
   text-decoration: none;
-  background-color: var(--bs-list-group-action-hover-bg);
+  background-color: var(--bs-purple);
 }
 .list-group-item-action:active {
   color: var(--bs-list-group-action-active-color);
-  background-color: var(--bs-list-group-action-active-bg);
+  background-color: var(--bs-primary-text-emphasis);
 }
 
 .list-group-item {
@@ -5256,9 +5256,9 @@ fieldset:disabled .btn {
   display: block;
   padding: var(--bs-list-group-item-padding-y)
     var(--bs-list-group-item-padding-x);
-  color: var(--bs-list-group-color);
+  /* color: var(--bs-list-group-color); */
   text-decoration: none;
-  background-color: var(--bs-list-group-bg);
+  /* background-color: var(--bs-list-group-bg); */
   border: var(--bs-list-group-border-width) solid
     var(--bs-list-group-border-color);
 }
@@ -13267,17 +13267,19 @@ legend {
   height: auto;
 }
 
-#friend_list {
-  border-bottom: 1px solid rgba(234, 57, 184, 0.4);
+#friend_list_row {
+  border-bottom: 1px solid rgba(50, 251, 226, 0.4);
+  max-width: 400px;
+  min-width: 200px;
 }
 
-#friend_list:last-child {
+#friend_list_row:last-child {
   border-bottom: none;
 }
 
 #avatar_preview,
 #user_avatar,
-#friend_list_avatar,
+#friend_list_row_avatar,
 #user_details_avatar,
 #chat_user_avatar {
   max-width: 120px;
@@ -13287,7 +13289,7 @@ legend {
 }
 
 #user_avatar,
-#friend_list_avatar,
+#friend_list_row_avatar,
 #user_details_avatar,
 #chat_user_avatar {
   max-width: 40px;
@@ -13305,12 +13307,13 @@ legend {
 }
 
 #friend_list_layout,
-#chat_friend_list {
+#chat_friend_list,
+#chat_section {
   border-color: var(--bs-cyan);
   min-height: 50vh;
 }
 
-#friend_list_avatar {
+#friend_list_row_avatar {
   max-width: 45px;
   aspect-ratio: 45 / 45;
 }
@@ -13325,7 +13328,7 @@ legend {
   aspect-ratio: 35 / 35;
 }
 
-#friend_list_username {
+#friend_list_row_username {
   font-size: 1.1em;
 }
 
@@ -13360,7 +13363,7 @@ legend {
   padding: 8px 10px 8px 10px;
 }
 
-.user-avatar-label {
+.upload-user-avatar-label {
   margin-top: -1em;
 }
 

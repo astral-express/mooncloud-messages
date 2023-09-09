@@ -265,7 +265,7 @@ export namespace FriendshipController {
      * 
      * Function that returns an array of friends from given username
      */
-    export async function getAllFriendsOfAUser(username: string): Promise<Array<any> | null | undefined> {
+    export async function getAllFriendsOfAUser(username: string): Promise<Array<Object> | null | undefined> {
         try {
             let result = await localUserModel.findOne({
                 username: username,
