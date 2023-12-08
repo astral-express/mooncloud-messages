@@ -1,5 +1,5 @@
 <!-- Home page -->
-<section id="hero_bg_img" class="d-flex">
+<main id="hero_bg_img" class="d-flex">
   <div class="container my-auto">
     <div class="d-flex-column d-lg-flex align-items-center">
       <div
@@ -15,6 +15,7 @@
         </h4>
         <div class="d-flex">
           <a
+            id="mooncloud_user_page"
             href="/user/<%= user.username %>"
             class="btn btn-lg btn-secondary mx-auto mx-lg-0"
           >
@@ -66,4 +67,5 @@
     </div>
   </div>
   <%- include('./modals/signup.ejs') %> <%- include('./modals/login.ejs') %>
-</section>
+</main>
+<script type="module" src="../public/utils/html/main.html.js"></script>

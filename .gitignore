@@ -2,3 +2,6 @@
 node_modules
 /node_modules
 *.log
+*.rdb
+__tests__
+/__tests__

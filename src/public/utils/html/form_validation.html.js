@@ -39,10 +39,10 @@ for (let i = 0; i < fieldsArray.length; i++) {
 // Email validation
 let emailValidation = (email) => {
   if (email.search(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/) < 0) {
-    emailErrorMsg.innerHTML = "Your email address is not valid";
+    emailErrorMsg.textContent = "Your email address is not valid";
     return false;
   } else {
-    emailErrorMsg.innerHTML = "";
+    emailErrorMsg.textContent = "";
     return true;
   }
 };
@@ -67,21 +67,21 @@ let passwordValidation = (password, confirm_password) => {
     errors.push("Your password must be at least 6 characters long");
   }
   if (errors.length > 0) {
-    passwordErrorMsg.innerHTML = errors[0];
-    passwordSuccessMsg.innerHTML = "";
+    passwordErrorMsg.textContent = errors[0];
+    passwordSuccessMsg.textContent = "";
     return false;
   }
   if (errors.length === 0) {
-    passwordErrorMsg.innerHTML = "";
-    passwordSuccessMsg.innerHTML = "Looks good!";
+    passwordErrorMsg.textContent = "";
+    passwordSuccessMsg.textContent = "Looks good!";
 
     if (password != confirm_password) {
-      confirmPasswordSuccessMsg.innerHTML = "";
-      confirmPasswordErrorMsg.innerHTML = "Your passwords do not match!";
+      confirmPasswordSuccessMsg.textContent = "";
+      confirmPasswordErrorMsg.textContent = "Your passwords do not match!";
       return false;
     } else {
-      confirmPasswordErrorMsg.innerHTML = "";
-      confirmPasswordSuccessMsg.innerHTML = "Your passwords match!";
+      confirmPasswordErrorMsg.textContent = "";
+      confirmPasswordSuccessMsg.textContent = "Your passwords match!";
       return true;
     }
   }
@@ -100,25 +100,31 @@ usernameField.addEventListener("keyup", (e) => {
 
 let usernameValidation = (username) => {
   let isUsernameValidated = checkIfItsAlphabeticalOrNumeralChar(username);
+  if (isUsernameValidated === null) {
+    usernameSuccessMsg.textContent = "";
+    usernameErrorMsg.textContent =
+      "Username cannot contain white space characters";
+    return false;
+  }
   if (isUsernameValidated === false) {
-    usernameSuccessMsg.innerHTML = "";
-    usernameErrorMsg.innerHTML = "Username cannot contain special characters";
+    usernameSuccessMsg.textContent = "";
+    usernameErrorMsg.textContent = "Username cannot contain special characters";
     return false;
   } else if (!isUsernameValidated === false) {
-    usernameSuccessMsg.innerHTML = "";
-    usernameErrorMsg.innerHTML = "Username cannot contain uppercase characters";
+    usernameSuccessMsg.textContent = "";
+    usernameErrorMsg.textContent = "Username cannot contain uppercase characters";
     return false;
-  } else if (username.length <= 3) {
-    usernameSuccessMsg.innerHTML = "";
-    usernameErrorMsg.innerHTML = "Username must be at least 3 characters long";
+  } else if (username.length <= 2) {
+    usernameSuccessMsg.textContent = "";
+    usernameErrorMsg.textContent = "Username must be at least 3 characters long";
     return false;
   } else if (username.length > 16) {
-    usernameSuccessMsg.innerHTML = "";
-    usernameErrorMsg.innerHTML = "Username can have maximum of 16 characters";
+    usernameSuccessMsg.textContent = "";
+    usernameErrorMsg.textContent = "Username can have maximum of 16 characters";
     return false;
   } else {
-    usernameSuccessMsg.innerHTML = "Looks good!";
-    usernameErrorMsg.innerHTML = "";
+    usernameSuccessMsg.textContent = "Looks good!";
+    usernameErrorMsg.textContent = "";
     return true;
   }
 };
@@ -127,6 +133,9 @@ let usernameValidation = (username) => {
 let checkIfItsAlphabeticalOrNumeralChar = (str) => {
   for (let i = 0; i < str.length; i++) {
     let char = str[i].charCodeAt(0);
+    if (char >= 0 && char <= 32) {
+      return null;
+    }
     if (char >= 65 && char <= 90) {
       return true;
     }

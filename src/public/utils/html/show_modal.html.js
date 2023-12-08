@@ -1,4 +1,4 @@
-// Displays bootstrap modal on page load
+// Displays bootstrap modal on page loa
 var loginPathName = "/login";
 var signUpPathName = "/signup";
 

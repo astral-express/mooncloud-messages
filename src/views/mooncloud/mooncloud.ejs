@@ -8,9 +8,9 @@
       aria-labelledby="pills-friends-tab"
       tabindex="0"
     >
-      <section id="user_row_section">
+      <section id="friend_list_section">
         <div class="d-flex justify-content-center justify-content-md-start">
-          <div id="user_row_layout" class="p-2">
+          <div id="friend_list_layout" class="bg-dark p-2">
             <div
               class="nav nav-pills mb-3 mb-md-0"
               id="v-pills-tab"
@@ -19,27 +19,62 @@
             >
               <!-- USER PROFILE ROW -->
               <div class="list-group" id="list-tab" role="tablist">
-                <%- include("user_row.ejs") %>
+                <%- include("friend_list.ejs") %>
               </div>
             </div>
             <div class="text-center p-3">
-              <button id="add_user_btn" class="btn btn-secondary btn-rounded btn-icon">
+              <button
+                id="add_user_btn"
+                type="button"
+                class="btn btn-secondary btn-rounded btn-icon"
+                data-bs-target="#search-users-modal"
+                data-bs-toggle="modal"
+              >
                 <i class="fa-solid fa-user-plus"></i>
               </button>
             </div>
           </div>
           <!-- USER PROFILE INFO -->
-          <div class="tab-content" id="v-pills-tabContent">
-            <div
-              class="tab-pane fade"
-              id="v-pills-profile"
-              role="tabpanel"
-              aria-labelledby="v-pills-profile-tab"
-              tabindex="0"
-            >
-              <!-- USER PROFILE DETAILS -->
-              <%- include("user_details.ejs") %>
-            </div>
+          <div class="tab-content ms-4" id="v-pills-tabContent">
+            <% if(friends === undefined) { %>
+            <% } else { %>
+                <% for(let i = 0; i < friends.length; i++) { %>
+                <div
+                class="tab-pane fade"
+                id="v-pills-profile-<%= friends[i].username %>"
+                role="tabpanel"
+                aria-labelledby="v-pills-profile-tab"
+                tabindex="0"
+                >
+                <!-- USER PROFILE DETAILS -->
+                <div id="user_details" class="d-flex flex-column align-items-center bg-dark p-4">
+                    <div class="user-details-avatar">
+                        <% if(friends[i].avatar != "" ) { %>
+                        <img id="user_details_avatar" class="me-1" src="assets/users/uploads/<%= friends[i].avatar %>" alt="user-details-avatar" />
+                        <% } else { %>
+                        <img id="user_details_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="user-details-avatar" />
+                        <% } %>
+                    </div>
+                    <div id="user_details_username" class="user-details-username pt-2 pb-1"> 
+                        <p class="m-0"><%= friends[i].username %></p>
+                    </div>
+                    <div class="user-details-description w-85 pb-3">
+                        <p class="m-0 small text-break text-center">Lorem ipsum dolor sit amet.</p>
+                    </div>
+                    <div class="user-details-action">
+                        <button
+                            id="initiate_chat_with_<%= friends[i].username %>"
+                            type="button"
+                            class="btn btn-secondary"
+                            >
+                            <i class="fa-solid fa-message me-1"></i>
+                            Message
+                        </button>
+                    </div>
+                </div>
+                </div>
+                <% } %>
+            <% } %>
           </div>
         </div>
       </section>
@@ -52,7 +87,7 @@
       aria-labelledby="pills-messages-tab"
       tabindex="0"
     >
-      <div id="messages_section"></div>
+      <section id="chat_section" class="d-flex justify-content-between"><%- include("messages_tab.ejs") %></section>
     </div>
     <!-- NOTIFICATIONS SECTION -->
     <div
@@ -61,7 +96,11 @@
       role="tabpanel"
       aria-labelledby="pills-notifications-tab"
       tabindex="0"
-    ></div>
+    >
+    <form action="tester" method="post">
+        <button type="submit">btn</button>
+    </form>
+    </div>
     <!-- SETTINGS SECTION  -->
     <div
       class="tab-pane fade"
@@ -81,7 +120,6 @@
         <button
           id="pills-friends-tab"
           class="nav-link active"
-          href="/user/<%= user.username %>/friends"
           data-bs-toggle="pill"
           data-bs-target="#pills-friends"
           role="tab"
@@ -97,7 +135,6 @@
         <button
           id="pills-messages-tab"
           class="nav-link"
-          href="/user/<%= user.username %>/messages"
           data-bs-toggle="pill"
           data-bs-target="#pills-messages"
           role="tab"
@@ -111,6 +148,7 @@
       </li>
       <li class="nav-image">
         <img
+          id="envelope_img"
           src="assets/vectors/circle-envelope.vector.png"
           alt="Logo"
           width="38"
@@ -122,7 +160,6 @@
         <button
           id="pills-notifications-tab"
           class="nav-link"
-          href="/user/<%= user.username %>/notifications"
           data-bs-toggle="pill"
           data-bs-target="#pills-notifications"
           role="tab"
@@ -138,7 +175,6 @@
         <button
           id="pills-settings-tab"
           class="nav-link"
-          href="/user/<%= user.username %>/settings"
           data-bs-toggle="pill"
           data-bs-target="#pills-settings"
           role="tab"
@@ -153,3 +189,9 @@
     </ul>
   </div>
 </div>
+<%- include('../modals/search_users.ejs') %>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script
+  type="module"
+  src="../../public/utils/html/client.socket.html.js"
+></script>
