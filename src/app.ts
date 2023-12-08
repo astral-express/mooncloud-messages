@@ -121,7 +121,7 @@ mongoose.connection.once("open", () => {
 
     const io = new Server(server, {
         cors: {
-            origin: [domain, admin_url],
+            origin: ["0.0.0.0", admin_url],
             credentials: true
         },
     });
