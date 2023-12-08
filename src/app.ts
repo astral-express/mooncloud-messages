@@ -316,7 +316,7 @@ mongoose.connection.once("open", () => {
     //     })
     // })
 
-    server.listen(port, () => logger.info("Server running on port: " + port));
+    server.listen(port, "0.0.0.0", () => logger.info("Server running on port: " + port));
     server.on("error", onError);
     server.on("listening", onListening);
 
