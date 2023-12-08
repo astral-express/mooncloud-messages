@@ -2,19 +2,21 @@ import mongoose from "mongoose";
 
 type membersType = [
     {
-        user: String,
-        avatar: String,
+        user: string,
+        avatar: string,
     },
     {
-        user: String,
-        avatar: String,
+        user: string,
+        avatar: string,
     },
 ]
 
 type messagesType = {
-    user: String,
-    message: String,
-    timestamp: String,
+    message_id: string,
+    user: string,
+    message: string,
+    dateSent: string,
+    dateRead: string,
 }
 
 let membersSchema = new mongoose.Schema<membersType>(
@@ -31,18 +33,20 @@ let membersSchema = new mongoose.Schema<membersType>(
 )
 
 let messagesSchema = new mongoose.Schema<messagesType>({
+    message_id: String,
     user: String,
     message: String,
-    timestamp: String,
+    dateSent: String,
+    dateRead: String,
 })
 
 interface Chat {
-    chatID: String;
+    chatID: string;
     time: Date;
-    members: [membersType];
-    messages: [messagesType];
-    description: String;
-    total_messages: Number;
+    members: membersType[];
+    messages: messagesType[];
+    description: string;
+    total_messages: number;
 }
 
 const chatSchema = new mongoose.Schema<Chat>({

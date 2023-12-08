@@ -40,22 +40,35 @@ export namespace LocalUsersController {
         }
     }
 
+    type UserArray = {
+        username: String,
+        avatar: String,
+        defaultAvatar: String,
+    }
+
     /**
      * @param query: string
-     * @returns user object
+     * @returns array
      * 
      * Takes a string argument, either user ID or username
      * and returns an user object
      */
-    export async function getLocalUser(query: string): Promise<Object | null | undefined> {
+    export async function getLocalUser(query: string): Promise<UserArray[] | null | undefined> {
+        let usersData = [];
         try {
-            let user = await localUserModel.find({
+            let users = await localUserModel.find({
                 username: {
                     $regex: query,
                 },
             });
-            if (!user) return null;
-            return user;
+            for (let i = 0; i < users.length; i++) {
+                usersData.push({
+                    username: users[i].username,
+                    avatar: users[i].avatar,
+                    defaultAvatar: users[i].defaultAvatar,
+                })
+            }
+            return usersData.length > 0 ? usersData : null;
         } catch (err: any) {
             return undefined;
         }

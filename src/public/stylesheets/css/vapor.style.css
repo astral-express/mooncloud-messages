@@ -5216,7 +5216,7 @@ fieldset:disabled .btn {
   --bs-list-group-disabled-color: rgba(50, 251, 226, 0.3);
   --bs-list-group-disabled-bg: #250d49;
   --bs-list-group-active-color: #fff;
-  --bs-list-group-active-bg: #ea39b8;
+  --bs-list-group-active-bg: #6f42c1;
   --bs-list-group-active-border-color: #ea39b8;
   display: flex;
   flex-direction: column;
@@ -5236,7 +5236,7 @@ fieldset:disabled .btn {
 
 .list-group-item-action {
   width: 100%;
-  color: var(--bs-list-group-action-color); 
+  color: var(--bs-list-group-action-color);
   text-align: inherit;
 }
 .list-group-item-action:hover,
@@ -5244,7 +5244,7 @@ fieldset:disabled .btn {
   z-index: 1;
   color: var(--bs-list-group-action-hover-color);
   text-decoration: none;
-  background-color: var(--bs-purple);
+  background-color: #4e3877; /* gay */
 }
 .list-group-item-action:active {
   color: var(--bs-list-group-action-active-color);
@@ -13281,27 +13281,26 @@ legend {
 #user_avatar,
 #friend_list_row_avatar,
 #user_details_avatar,
-#chat_user_avatar {
-  max-width: 120px;
-  height: auto;
-  aspect-ratio: 120 / 120;
-  object-fit: cover;
+#chat_user_avatar,
+#search_user_avatar {
+  width: 40px;
+  height: 40px;
 }
 
 #user_avatar,
 #friend_list_row_avatar,
 #user_details_avatar,
-#chat_user_avatar {
-  max-width: 40px;
-  aspect-ratio: 40 / 40;
+#chat_user_avatar,
+#search_user_avatar {
   border-radius: 50%;
+  object-fit: cover;
 }
 
 #user_details,
 #friend_list_layout,
 #chat_friend_list,
 #chat_container,
-#chat_messages_container {
+.search-user-card {
   border: 1px solid var(--bs-pink);
   border-radius: 1em;
 }
@@ -13313,27 +13312,37 @@ legend {
   min-height: 50vh;
 }
 
-#friend_list_row_avatar {
-  max-width: 45px;
-  aspect-ratio: 45 / 45;
+#user_details,
+#chat_container,
+.search-user-card {
+  border-color: var(--bs-cyan);
+}
+
+#friend_list_row_avatar,
+#search_user_avatar {
+  width: 45px;
+  height: 45px;
 }
 
 #user_details_avatar {
-  max-width: 75px;
-  aspect-ratio: 75 / 75;
+  width: 75px;
 }
 
 #chat_user_avatar {
-  max-width: 35px;
-  aspect-ratio: 35 / 35;
+  width: 35px;
 }
 
 #friend_list_row_username {
   font-size: 1.1em;
 }
 
-#user_details_username {
+#user_details_username,
+.search-user-username {
   font-size: 1.3em;
+}
+
+.search-user-username {
+  color: var(--bs-cyan);
 }
 
 #user_status {
@@ -13394,8 +13403,8 @@ legend {
   max-width: 300px;
 }
 
-#messages_container {
-  min-width: 680px;
+.scrollable {
+  min-width: 480px;
   /* max-width: 681px; */
   max-height: 68vh;
   overflow: auto;
@@ -13412,5 +13421,25 @@ legend {
 
 ::-webkit-scrollbar-thumb {
   background-color: var(--bs-primary);
+  border-radius: 1em;
+}
+
+#message_info_mark {
+  font-size: 11px;
+}
+
+#sent_message_info_mark,
+#received_message_info_mark,
+.search-user-desc {
+  font-size: 0.68em;
+}
+
+#fa_user_icon,
+#fa_plus_icon {
+  font-size: 13px;
+}
+
+#modal_body {
+  border-bottom: 1px solid var(--bs-cyan);
   border-radius: 1em;
 }

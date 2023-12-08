@@ -65,7 +65,7 @@ export namespace ChatController {
                     chatsData.push({
                         chatID: chats[i].chatID,
                         members: chats[i].members,
-                        messages: chats[i].messages,
+                        last_message: chats[i].messages.pop(),
                     });
                 }
                 return chatsData;
@@ -117,29 +117,34 @@ export namespace ChatController {
     /**
      * @param chatID: string
      * 
-     * Updates chat record on message sent and adds it to the messages array
+     * Updates chat record on message sent and adds it to the messages array, returns id for further assignments
      */
-    export async function sendMessage(sender: string, message: string, chatID: string): Promise<Boolean | undefined> {
+    export async function sendMessage(sender: string, message: string, chatID: string): Promise<String | undefined> {
         try {
             let chat = await chatModel.findOne({
-                _id: chatID,
+                chatID: chatID,
             })
             if (chat) {
                 let date = Math.floor((new Date()).getTime() / 1000)
+                let id = randomUUID();
                 await chatModel.updateOne({
                     _id: chat,
                 },
                     {
                         $push: {
                             messages: {
+                                message_id: id,
                                 user: sender,
                                 message: message,
-                                timestamp: date,
+                                dateSent: date,
+                                dateRead: null,
                             }
                         },
                     })
-            } return true;
+                return id;
+            }
         } catch (err: any) {
+            console.error(err)
             return undefined;
         }
     }
@@ -152,13 +157,39 @@ export namespace ChatController {
     export async function loadChat(chatID: string | null | undefined): Promise<any | undefined> {
         try {
             let chat = await chatModel.findOne({
-                _id: chatID,
-            })
+                chatID: chatID,
+            });
             if (chat) {
                 return chat;
             }
         } catch (err: any) {
             return undefined;
+        }
+    }
+
+    /**
+     * 
+     * @param chatID: string
+     * @param messageID: string
+     * 
+     * Updates date of dateRead row in db when message was seen by the reader
+     */
+    export async function updateIfMessageIsSeen(chatID: string, messageID: string): Promise<any | undefined> {
+        let newDate = Math.floor((new Date()).getTime() / 1000);
+        let dateToString = newDate.toString();
+        try {
+            await chatModel.updateMany(
+                {
+                    chatID, "messages.message_id": messageID,
+                },
+                {
+                    "messages.$.dateRead": dateToString,
+                }
+            )
+            return dateToString;
+        }
+        catch (err: any) {
+            console.log(err);
         }
     }
 }

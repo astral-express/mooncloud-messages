@@ -30,7 +30,7 @@
         <li
           class="nav-item d-flex align-items-center justify-content-center my-2 my-lg-0 me-lg-2"
         >
-          <a class="mt-1 text-decoration-none text-dark" href="/user/<%= user.username %>">
+          <a logged-user class="mt-1 text-decoration-none text-dark" href="/user/<%= user.username %>">
             <% if(user.avatar != "" ) { %>
             <img id="user_avatar" class="me-1" src="assets/users/uploads/<%= user.avatar %>" alt="user_avatar" />
             <% } else { %>

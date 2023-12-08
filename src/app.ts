@@ -1,8 +1,8 @@
 import "dotenv/config";
+import "ejs";
 import express, { Application, Request, Response, NextFunction } from "express";
 import path from "path";
 import cookieParser from "cookie-parser";
-import "ejs";
 import expressLayouts from "express-ejs-layouts";
 import expressSession, { Session } from "express-session";
 import bodyParser from "body-parser";
@@ -27,8 +27,9 @@ import "socket.io-client";
 import { instrument } from "@socket.io/admin-ui";
 import { sessions } from "./database/schemas/sessions.schema";
 import { localUserModel } from "./database/schemas/local_user.schema";
-import { randomUUID } from "crypto";
 import { ChatController } from "./controllers/chat.controller";
+import { FriendshipController } from "./controllers/friendship.controller";
+import { LocalUsersController } from "./controllers/local_users.controller";
 const app: Application = express();
 
 declare module "express-session" {
@@ -172,18 +173,42 @@ mongoose.connection.once("open", () => {
         })
     })
 
+    /**
+     * On page load, call to pre-load friend list
+     */
+    io.on("connection", async (socket) => {
+        try {
+            let chatsData = await ChatController.findAllChatsOfAUser(`${socket.data.username}`);
+            if (chatsData) {
+                socket.emit("friend-list-rows-load", { chatsData })
+            } else return null;
+        } catch (err: any) {
+            console.error(err);
+            return undefined;
+        }
+    })
+
     io.on("connection", (socket) => {
-        socket.on("send-private-message", async (content, to) => {
-            // illogical db call
-            let chatID = await ChatController.checkIfChatExists(socket.data.username, to);
-            if (chatID) {
-                await ChatController.sendMessage(socket.data.username, content, chatID);
-                socket.to(to).to(socket.data.username).emit("receive-private-message", {
-                    content,
-                    from: socket.data.username,
-                    to,
-                })
-            } return false;
+        socket.on("send-private-message", async (content, to, chatID) => {
+            try {
+                let messageID = await ChatController.sendMessage(socket.data.username, content, chatID);
+                if (messageID) {
+                    socket.to(to).to(socket.data.username).emit("receive-private-message", {
+                        content,
+                        from: socket.data.username,
+                        to,
+                        chatID,
+                        messageID
+                    })
+                    socket.emit("message-sent", {
+                        content,
+                        chatID,
+                        messageID
+                    })
+                }
+            } catch (err: any) {
+                throw new Error(err);
+            }
         })
     })
 
@@ -225,19 +250,71 @@ mongoose.connection.once("open", () => {
     //     )
     // })
 
+    //SINGLE CHAT LOAD
     io.on("connection", (socket) => {
-        socket.on("messages-tab", async () => {
+        socket.on("load-chat", async (chatID) => {
             try {
-                let chatsData = await ChatController.findAllChatsOfAUser(`${socket.data.username}`);
-                if (chatsData) {
-                    socket.emit("pre-loaded-chats", { chatsData })
+                let chatData = await ChatController.loadChat(chatID);
+                if (chatData) {
+                    socket.emit("loaded-chat", { chatData })
                 } else return null;
+            }
+            catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("seen", async (chatID, messageID) => {
+            try {
+                let seenDate = await ChatController.updateIfMessageIsSeen(chatID, messageID);
+                // if(seenDate) {
+                //     socket.emit("update-seen-status", { chatID, seenDate });
+                // }
             } catch (err: any) {
                 console.error(err);
                 return undefined;
             }
         })
     })
+
+    io.on("connection", (socket) => {
+        socket.on("friend-request", async (user, target) => {
+            try {
+                let result = await FriendshipController.requestFriend(user, target);
+                if (result) {
+                    socket.emit("is-friend-request-successful", { result });
+                }
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("search-input", async (user, searchInput) => {
+            try {
+                let usersResult = await LocalUsersController.getLocalUser(searchInput);
+                let friendshipsResult = await FriendshipController.findFriendships(user);
+                socket.emit("search-result", { usersResult, friendshipsResult });
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        });
+    });
+
+    // io.on("connection", (socket) => {
+    //     socket.on("check-friendship-status", async (username, friendshipID) => {
+    //         let status = await FriendshipController.findFriendship("", "", friendshipID);
+    //         if (status) {
+    //             socket.emit("friendship-status", { friendshipID, status, username });
+    //         }
+    //     })
+    // })
 
     server.listen(port, () => logger.info("Server running on port: " + port));
     server.on("error", onError);

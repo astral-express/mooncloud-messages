@@ -5,7 +5,7 @@
     <div id="friend_list_row" class="p-3">
     <div class="d-flex justify-content-between align-items-center">
         <div class="user-avatar">
-        <span class="status me-1">
+        <!-- <span class="status me-1">
             <% if(friends[i].status === "online") { %>
             <svg width="9px" height="9px" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--twemoji" preserveAspectRatio="xMidYMid meet" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><circle fill="#25e000" cx="18" cy="18" r="18"></circle></g></svg>
             <% } else if(friends[i].status === "away") { %>
@@ -15,7 +15,7 @@
             <% } else { %>
             <svg width="9px" height="9px" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--twemoji" preserveAspectRatio="xMidYMid meet" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><circle fill="#7d7d7d" cx="18" cy="18" r="18"></circle></g></svg>
             <% } %>
-        </span>
+        </span> -->
         <% if(friends[i].avatar != "") { %>
         <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/<%= friends[i].avatar %>" alt="user-row-avatar" />
         <% } else { %>

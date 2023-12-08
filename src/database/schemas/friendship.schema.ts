@@ -6,6 +6,7 @@ import mongoose from "mongoose";
  * When a friend is denied or removed, the whole record will be removed
  */
 interface Friendship {
+    friendship_id: String;
     requester: userType;
     receiver: userType;
     status: Number;
@@ -26,6 +27,7 @@ type userType = {
 }
 
 const friendshipSchema = new mongoose.Schema<Friendship>({
+    friendship_id: String,
     requester: userSchema,
     receiver: userSchema,
     status: {

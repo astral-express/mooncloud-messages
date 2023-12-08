@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { FriendshipController } from "../controllers/friendship.controller";
-import { LocalUsersController } from "../controllers/local_users.controller";
 var router = Router();
 
 router.get("/:id", async (req, res) => {
@@ -14,17 +13,5 @@ router.get("/:id", async (req, res) => {
         friends: friendsArray,
     });
 });
-
-router.post("/search", async (req, res) => {
-    const { input } = req.body;
-    const result = await LocalUsersController.getLocalUser(input);
-    console.log(result);
-    if(!result) return null;
-    res.json(result);
-})
-
-router.post("/tester", async (req, res) => {
-    
-})
 
 export const userRouter = router;

@@ -17,18 +17,16 @@ interface LocalUser {
 type friendshipType = {
     friendship_id: String,
     friend_id: String,
+    status: Number
     username: String,
-    email: String,
-    avatar: String,
     added_at: Date,
 }
 
 let friendshipSchema = new mongoose.Schema<friendshipType>({
     friendship_id: String,
     friend_id: String,
+    status: Number,
     username: String,
-    email: String,
-    avatar: String,
     added_at: Date,
 })
 

@@ -1,36 +1,43 @@
+import crypro from "crypto";
 import { localUserModel } from "../database/schemas/local_user.schema";
 import { friendshipModel } from "../database/schemas/friendship.schema";
 
 export namespace FriendshipController {
+
+    type FriendshipsArray = {
+        username: String,
+        status: Number,
+    }
+
     /**
-     * @param requester: string 
-     * @param receiver: string
-     * @returns Promise<string | boolean | undefined>
+     * @param user: string
+     * @returns array
      * 
      * Function that takes a requester (users username) and a receiver (users username)
      * as arguments in order to check if their friendship exists,
      * if it does, it returns friendship's ID as string
      */
-    export async function findFriendship(requester: string, receiver: string): Promise<string | boolean | undefined> {
+    export async function findFriendships(user: string, friendshipID?: string): Promise<FriendshipsArray[] | null | undefined> {
+        let friendshipsData: FriendshipsArray[] = [];
         try {
-            let friendship = await friendshipModel.findOne({
-                $and:
-                    [
-                        {
-                            requester: requester,
-                        },
-                        {
-                            receiver: receiver,
-                        }
-                    ]
-            }
-            );
-            if (friendship !== null || undefined) {
-                const friendshipID = friendship?._id.toString();
-                return friendshipID;
+            let query: any;
+            if (friendshipID) {
+                query = { _id: friendshipID };
             } else {
-                return false;
+                query = {
+                    'username': user,
+                };
             }
+            const result = await localUserModel.find(query, { friendships: 1 });
+            const firstElem = result[0];
+            const friendshipsArray = firstElem.friendships;
+            friendshipsArray.forEach(friendshipObj => {
+                friendshipsData.push({
+                    username: friendshipObj.username,
+                    status: friendshipObj.status,
+                });
+            })
+            return friendshipsData.length > 0 ? friendshipsData : null;
         } catch (err: any) {
             return undefined;
         }
@@ -38,43 +45,82 @@ export namespace FriendshipController {
 
     /**
      * 
-     * @param requesterID: string
-     * @param receiverID: string
-     * @returns boolean
+     * @param requester: string
+     * @param receiver: string
+     * @returns string
      * 
      * Function that writes a new object record of a friendship between 2 users and
      * sets it as Pending status (to be resolved depending if the users accepts or declines)
      */
-    export async function addFriend(requesterID: string, receiverID: string): Promise<boolean | undefined> {
-        try {
-            let usersID = await localUserModel.find({
-                _id:
-                {
-                    $in: [requesterID, receiverID]
-                }
-            });
-            if (usersID.length === 2) {
-                await friendshipModel.create({
-                    requester: {
-                        _id: usersID[0]?._id,
-                        username: usersID[0]?.username,
-                        email: usersID[0]?.email,
-                    },
-                    receiver: {
-                        _id: usersID[1]?._id,
-                        username: usersID[1]?.username,
-                        email: usersID[1]?.email,
-                    },
-                    status: 2,
-                    description: "Pending",
-                });
-                return true;
-            } else {
-                return false;
+    export async function requestFriend(requester: string, receiver: string): Promise<String | null | undefined> {
+        let result = await findFriendships(requester);
+        if (result) {
+            let friend;
+            for (let i = 0; i < result.length; i++) {
+                friend = result[i].username;
             }
-        } catch (err: any) {
-            return undefined;
-        }
+            if (friend !== receiver) {
+                try {
+                    let users = await localUserModel.find({
+                        username:
+                        {
+                            $in: [requester, receiver]
+                        }
+                    });
+                    if (users.length === 2) {
+                        let id = crypto.randomUUID();
+                        await friendshipModel.create({
+                            friendship_id: id,
+                            requester: {
+                                _id: users[0]?._id,
+                                username: users[0]?.username,
+                                email: users[0]?.email,
+                            },
+                            receiver: {
+                                _id: users[1]?._id,
+                                username: users[1]?.username,
+                                email: users[1]?.email,
+                            },
+                            status: 2,
+                            description: "Pending",
+                        });
+                        await localUserModel.findOneAndUpdate({
+                            username: requester,
+                        },
+                            {
+                                $push: {
+                                    friendships: {
+                                        friendship_id: id,
+                                        status: 2,
+                                        friend_id: users[1]?._id,
+                                        username: users[1]?.username,
+                                        added_at: Date.now(),
+                                    },
+                                }
+                            }
+                        )
+                        await localUserModel.findOneAndUpdate({
+                            _id: receiver,
+                        },
+                            {
+                                $push: {
+                                    friendships: {
+                                        friendship_id: id,
+                                        status: 2,
+                                        friend_id: users[0]?._id,
+                                        username: users[0]?.username,
+                                        added_at: Date.now(),
+                                    },
+                                }
+                            }
+                        )
+                        return receiver;
+                    }
+                } catch (err: any) {
+                    return undefined;
+                }
+            }
+        } else return null;
     }
 
     /**
