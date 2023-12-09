@@ -23,6 +23,7 @@ router.post("/login", async (req, res, next) => {
     const localUser = await localUserModel.findOne({
         $or: [{ email: email_or_username }, { username: email_or_username }],
     });
+    console.log(localUser)
     if (!localUser) {
         req.flash(
             "error_input",

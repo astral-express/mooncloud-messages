@@ -116,12 +116,11 @@ mongoose.connection.once("open", () => {
     app.set("port", port);
 
     var server = http.createServer(app);
-    var domain = `${process.env.SERVER}`;
+    var domain = `${process.env.SERVER}` || "0.0.0.0";
     var admin_url = `${process.env.SOCKET_IO_ADMIN_URL}`;
-
     const io = new Server(server, {
         cors: {
-            origin: ["0.0.0.0", admin_url],
+            origin: [domain, admin_url],
             credentials: true
         },
     });
