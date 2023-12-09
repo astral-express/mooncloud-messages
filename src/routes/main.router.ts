@@ -7,11 +7,12 @@ const router = Router();
 
 /* GET home page */
 router.get("/", (req, res) => {
+    (req as any).description = "Home";
     if (res.headersSent !== true) {
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
     }
     res.render("main", {
-        description: "Home",
+        description: (req as any).description,
         user: req.user,
         warning_email: false,
         warning_username: false,
@@ -24,11 +25,12 @@ router.get("/", (req, res) => {
 
 /* GET home/login modal */
 router.get("/login", (req, res) => {
+    (req as any).description = "Login";
     if (res.headersSent !== true) {
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
     }
     res.render("main", {
-        description: "Login",
+        description: (req as any).description,
         warning_email: req.flash("warning_email"),
         warning_password: req.flash("warning_password"),
         user_error_input: req.flash("error_input"),
@@ -39,11 +41,12 @@ router.get("/login", (req, res) => {
 
 /* GET home/signup modal */
 router.get("/signup", (req, res) => {
+    (req as any).description = "Sign up";
     if (res.headersSent !== true) {
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
     }
     res.render("main", {
-        description: "Sign up",
+        description: (req as any).description,
         user_exists: req.flash("user_exists"),
         warning_email: false,
         warning_username: false,

@@ -206,7 +206,7 @@
 }
 
 body {
-  height: 100vh;
+  /* height: 100vh; */
   margin: 0;
   font-family: var(--bs-font-sans-serif);
   font-size: var(--bs-body-font-size);
@@ -13261,10 +13261,7 @@ legend {
 }
 
 #footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: auto;
+  font-size: 0.8em;
 }
 
 #friend_list_row {
@@ -13309,8 +13306,9 @@ legend {
 #chat_friend_list,
 #chat_section {
   border-color: var(--bs-cyan);
-  min-height: 50vh;
+  min-height: 70vh;
   max-width: 24em;
+  min-width: 24em;
 }
 
 #user_details,
@@ -13364,7 +13362,6 @@ legend {
 #chat_friend_list,
 #chat_container {
   background-color: var(--bs-dark);
-  min-height: 75vh;
   border-radius: 1em;
 }
 
@@ -13438,6 +13435,12 @@ legend {
 }
 
 #modal_body {
+  border-bottom: 1px solid var(--bs-cyan);
+  border-radius: 1em;
+}
+
+#friend_list_info,
+#chat_list_info {
   border-bottom: 1px solid var(--bs-cyan);
   border-radius: 1em;
 }
