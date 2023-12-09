@@ -116,12 +116,11 @@ mongoose.connection.once("open", () => {
     app.set("port", port);
 
     var server = http.createServer(app);
-    var local_server = `${process.env.LOCAL_SERVER}`;
+    var domain = `${process.env.SERVER}` || "0.0.0.0";
     var admin_url = `${process.env.SOCKET_IO_ADMIN_URL}`;
-
     const io = new Server(server, {
         cors: {
-            origin: [local_server, admin_url],
+            origin: [domain, admin_url],
             credentials: true
         },
     });
@@ -316,7 +315,7 @@ mongoose.connection.once("open", () => {
     //     })
     // })
 
-    server.listen(port, () => logger.info("Server running on port: " + port));
+    server.listen(port, "0.0.0.0", () => logger.info("Server running on port: " + port));
     server.on("error", onError);
     server.on("listening", onListening);
 
