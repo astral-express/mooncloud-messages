@@ -97,9 +97,7 @@
       aria-labelledby="pills-notifications-tab"
       tabindex="0"
     >
-    <form action="tester" method="post">
-        <button type="submit">btn</button>
-    </form>
+      <section id="notification_section" class="mx-auto"><%- include("notifications_tab.ejs") %></section>
     </div>
     <!-- SETTINGS SECTION  -->
     <div
@@ -108,7 +106,9 @@
       role="tabpanel"
       aria-labelledby="pills-settings-tab"
       tabindex="0"
-    ></div>
+    >
+    <section id="settings_section" class="mx-auto"><%- include("settings_tab.ejs") %></section>
+    </div>
   </div>
   <div class="pills-tab">
     <ul
