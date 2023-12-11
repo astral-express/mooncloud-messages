@@ -97,7 +97,7 @@ mongoose_1.default.connection.once("open", () => {
     var port = normalizePort(process.env.PORT || "3000");
     app.set("port", port);
     var server = http_1.default.createServer(app);
-    var domain = `${process.env.SERVER}`;
+    var domain = `${process.env.SERVER}` || "0.0.0.0";
     var admin_url = `${process.env.SOCKET_IO_ADMIN_URL}`;
     const io = new socket_io_1.Server(server, {
         cors: {

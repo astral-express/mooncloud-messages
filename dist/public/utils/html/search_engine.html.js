@@ -49,12 +49,7 @@ function inputCoolDown() {
     }, 1000);
 }
 function searchedUsers(users, friendships) {
-    if (users.length <= 0) {
-        searchInfo.textContent = "No users found";
-    }
-    else {
-        searchInfo.textContent = "";
-    }
+    searchInfo.textContent = users.length <= 0 ? "No users found" : "";
     let foundUsers = document.querySelectorAll(".search-user-username");
     if (foundUsers) {
         for (let i = 0; i < foundUsers.length; i++) {
@@ -73,12 +68,10 @@ function searchedUsers(users, friendships) {
             const cardButton = card.querySelector("[action]");
             const cardDesc = card.querySelector("[desc]");
             // avatar
-            if (users[i].avatar !== "default_user_avatar.jpg") {
-                cardAvatar.src = `assets/users/uploads/${users[i].avatar}`;
-            }
-            else {
-                cardAvatar.src = `assets/users/default/default_user_avatar.jpg`;
-            }
+            cardAvatar.src =
+                users[i].avatar !== "default_user_avatar.jpg"
+                    ? `assets/users/uploads/${users[i].avatar}`
+                    : `assets/users/default/default_user_avatar.jpg`;
             // username
             cardUsername.textContent = users[i].username;
             // body
@@ -89,19 +82,17 @@ function searchedUsers(users, friendships) {
                     let friendsUsername = friendships[i].username;
                     let friendshipStatus = friendships[i].status;
                     if (searchedUser === friendsUsername) {
-                        if (friendshipStatus === 1) {
-                            icon.classList.add("fa-user");
-                            icon.setAttribute("id", "fa_user_icon");
-                            cardDesc.textContent = `Already friends `;
-                            cardDesc.style.color = "#44d9e8";
-                            cardButton.textContent = "Friends ";
-                            cardButton.setAttribute("disabled", true);
-                        }
-                        if (friendshipStatus === 2) {
-                            cardButton.setAttribute("disabled", true);
-                            cardDesc.style.color = "#ffc107";
-                            cardDesc.textContent = "Pending friend request";
-                        }
+                        icon.classList.add("fa-user", friendshipStatus === 1);
+                        icon.setAttribute("id", "fa_user_icon", friendshipStatus === 1);
+                        cardButton.textContent =
+                            friendshipStatus === 1 ? "Friends " : "Add friend ";
+                        cardButton.setAttribute("disabled", friendshipStatus === 1 || friendshipStatus === 2);
+                        cardDesc.textContent =
+                            friendshipStatus === 1
+                                ? "Already friends"
+                                : "Pending friend request";
+                        cardDesc.style.color =
+                            friendshipStatus === 1 ? "#44d9e8" : "#ffc107";
                     }
                     else {
                         icon.classList.add("fa-plus");
@@ -110,6 +101,12 @@ function searchedUsers(users, friendships) {
                     }
                     cardButton.append(icon);
                 }
+            }
+            else {
+                icon.classList.add("fa-plus");
+                icon.setAttribute("id", "fa_plus_icon");
+                cardButton.textContent = `Add friend `;
+                cardButton.append(icon);
             }
             cardButton.addEventListener("click", (e) => {
                 let target = e.target.parentNode.childNodes[1].textContent;

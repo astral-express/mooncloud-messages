@@ -8,8 +8,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FriendshipController = void 0;
+const crypto_1 = __importDefault(require("crypto"));
 const local_user_schema_1 = require("../database/schemas/local_user.schema");
 const friendship_schema_1 = require("../database/schemas/friendship.schema");
 var FriendshipController;
@@ -62,74 +66,82 @@ var FriendshipController;
      * sets it as Pending status (to be resolved depending if the users accepts or declines)
      */
     function requestFriend(requester, receiver) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
         return __awaiter(this, void 0, void 0, function* () {
             let result = yield findFriendships(requester);
+            let friend;
             if (result) {
-                let friend;
                 for (let i = 0; i < result.length; i++) {
                     friend = result[i].username;
                 }
-                if (friend !== receiver) {
-                    try {
-                        let users = yield local_user_schema_1.localUserModel.find({
-                            username: {
-                                $in: [requester, receiver]
+            }
+            if ((!friend) || (friend !== receiver)) {
+                try {
+                    let users = yield local_user_schema_1.localUserModel.find({
+                        username: {
+                            $in: [requester, receiver]
+                        }
+                    });
+                    if (users.length === 2) {
+                        let id = crypto_1.default.randomUUID();
+                        let user1;
+                        let user2;
+                        for (let i = 0; i < users.length; i++) {
+                            if (users[i].username === requester) {
+                                user1 = users[i];
+                            }
+                            else if (users[i].username === receiver) {
+                                user2 = users[i];
+                            }
+                        }
+                        yield friendship_schema_1.friendshipModel.create({
+                            friendship_id: id,
+                            requester: {
+                                _id: user1 === null || user1 === void 0 ? void 0 : user1._id,
+                                username: user1 === null || user1 === void 0 ? void 0 : user1.username,
+                                email: user1 === null || user1 === void 0 ? void 0 : user1.email,
+                            },
+                            receiver: {
+                                _id: user2 === null || user2 === void 0 ? void 0 : user2._id,
+                                username: user2 === null || user2 === void 0 ? void 0 : user2.username,
+                                email: user2 === null || user2 === void 0 ? void 0 : user2.email,
+                            },
+                            status: 2,
+                            description: "Pending",
+                        });
+                        yield local_user_schema_1.localUserModel.findOneAndUpdate({
+                            username: requester,
+                        }, {
+                            $push: {
+                                friendships: {
+                                    friendship_id: id,
+                                    status: 2,
+                                    friend_id: user2 === null || user2 === void 0 ? void 0 : user2._id,
+                                    username: user2 === null || user2 === void 0 ? void 0 : user2.username,
+                                    added_at: Date.now(),
+                                },
                             }
                         });
-                        if (users.length === 2) {
-                            let id = crypto.randomUUID();
-                            yield friendship_schema_1.friendshipModel.create({
-                                friendship_id: id,
-                                requester: {
-                                    _id: (_a = users[0]) === null || _a === void 0 ? void 0 : _a._id,
-                                    username: (_b = users[0]) === null || _b === void 0 ? void 0 : _b.username,
-                                    email: (_c = users[0]) === null || _c === void 0 ? void 0 : _c.email,
+                        yield local_user_schema_1.localUserModel.findOneAndUpdate({
+                            username: receiver,
+                        }, {
+                            $push: {
+                                friendships: {
+                                    friendship_id: id,
+                                    status: 2,
+                                    friend_id: user1 === null || user1 === void 0 ? void 0 : user1._id,
+                                    username: user1 === null || user1 === void 0 ? void 0 : user1.username,
+                                    added_at: Date.now(),
                                 },
-                                receiver: {
-                                    _id: (_d = users[1]) === null || _d === void 0 ? void 0 : _d._id,
-                                    username: (_e = users[1]) === null || _e === void 0 ? void 0 : _e.username,
-                                    email: (_f = users[1]) === null || _f === void 0 ? void 0 : _f.email,
-                                },
-                                status: 2,
-                                description: "Pending",
-                            });
-                            yield local_user_schema_1.localUserModel.findOneAndUpdate({
-                                username: requester,
-                            }, {
-                                $push: {
-                                    friendships: {
-                                        friendship_id: id,
-                                        status: 2,
-                                        friend_id: (_g = users[1]) === null || _g === void 0 ? void 0 : _g._id,
-                                        username: (_h = users[1]) === null || _h === void 0 ? void 0 : _h.username,
-                                        added_at: Date.now(),
-                                    },
-                                }
-                            });
-                            yield local_user_schema_1.localUserModel.findOneAndUpdate({
-                                _id: receiver,
-                            }, {
-                                $push: {
-                                    friendships: {
-                                        friendship_id: id,
-                                        status: 2,
-                                        friend_id: (_j = users[0]) === null || _j === void 0 ? void 0 : _j._id,
-                                        username: (_k = users[0]) === null || _k === void 0 ? void 0 : _k.username,
-                                        added_at: Date.now(),
-                                    },
-                                }
-                            });
-                            return receiver;
-                        }
-                    }
-                    catch (err) {
-                        return undefined;
+                            }
+                        });
+                        return receiver;
                     }
                 }
+                catch (err) {
+                    console.log(err);
+                    return undefined;
+                }
             }
-            else
-                return null;
         });
     }
     FriendshipController.requestFriend = requestFriend;

@@ -31,6 +31,7 @@ passport_1.default.deserializeUser((id, done) => __awaiter(void 0, void 0, void 
         done(null, user);
     }
     catch (err) {
+        console.log(err);
         done(err, null);
     }
 }));
@@ -50,6 +51,7 @@ passport_1.default.use(new passport_local_1.Strategy({
         done(false, localUser);
     }
     catch (err) {
+        console.log(err);
         done(err, false);
     }
 })));

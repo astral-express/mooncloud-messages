@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 // DOM Selectors
 const pillsNavbar = document.querySelectorAll("ul#pills-tab > li.nav-item");
-const mooncloudUserPage = document.getElementById("mooncloud_user_page");
 const chatTabContent = document.getElementById("chat_tab_content");
 const chatListGroup = document.getElementById("chat_list_group");
 const chatInitiationBtn = document.querySelectorAll("div.user-details-action > button");
@@ -366,7 +365,7 @@ function chatsListLoad(chatsData) {
         userDetails.push(userObj);
         chatIdMap.set(chatsData[i].chatID, { loaded: false, active: false });
     }
-    chatListGroup.textContent = userDetails
+    chatListGroup.innerHTML = userDetails
         .map((user) => {
         if (!user.lastMessage) {
             return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0">
@@ -396,7 +395,7 @@ function chatsListLoad(chatsData) {
         }
     })
         .join(" ");
-    chatTabContent.textContent = userDetails
+    chatTabContent.innerHTML = userDetails
         .map((user) => {
         return `<div class="tab-pane" id="tab-chat-with-${user.name}" role="tabpanel">
         <div id="chat_container" class="d-flex flex-column justify-content-between ms-3 p-2">

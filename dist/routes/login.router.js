@@ -34,6 +34,7 @@ router.post("/login", (req, res, next) => __awaiter(void 0, void 0, void 0, func
     const localUser = yield local_user_schema_1.localUserModel.findOne({
         $or: [{ email: email_or_username }, { username: email_or_username }],
     });
+    console.log(localUser);
     if (!localUser) {
         req.flash("error_input", "Couldn't find an account with this email or username!");
         return res.redirect(301, "/login");

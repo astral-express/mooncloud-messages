@@ -79,7 +79,7 @@
   --bs-dark-border-subtle: #adb5bd;
   --bs-white-rgb: 255, 255, 255;
   --bs-black-rgb: 0, 0, 0;
-  --bs-font-sans-serif: Ubuntu, Lato, -apple-system, BlinkMacSystemFont,
+  --bs-font-sans-serif: Nunito, Lato, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol";
   --bs-font-monospace: SFMono-Regular, Menlo, Monaco, Consolas,
@@ -206,7 +206,7 @@
 }
 
 body {
-  height: 100vh;
+  /* height: 100vh; */
   margin: 0;
   font-family: var(--bs-font-sans-serif);
   font-size: var(--bs-body-font-size);
@@ -13261,10 +13261,7 @@ legend {
 }
 
 #footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: auto;
+  font-size: 0.8em;
 }
 
 #friend_list_row {
@@ -13300,6 +13297,7 @@ legend {
 #friend_list_layout,
 #chat_friend_list,
 #chat_container,
+#notifications_tab,
 .search-user-card {
   border: 1px solid var(--bs-pink);
   border-radius: 1em;
@@ -13307,13 +13305,17 @@ legend {
 
 #friend_list_layout,
 #chat_friend_list,
-#chat_section {
+#chat_section,
+#notifications_tab {
   border-color: var(--bs-cyan);
-  min-height: 50vh;
+  min-height: 70vh;
+  max-width: 24em;
+  min-width: 24em;
 }
 
 #user_details,
 #chat_container,
+#notifications_tab,
 .search-user-card {
   border-color: var(--bs-cyan);
 }
@@ -13322,6 +13324,10 @@ legend {
 #search_user_avatar {
   width: 45px;
   height: 45px;
+}
+
+#notifications_tab {
+    max-width: 35em;
 }
 
 #user_details_avatar {
@@ -13363,7 +13369,6 @@ legend {
 #chat_friend_list,
 #chat_container {
   background-color: var(--bs-dark);
-  min-height: 75vh;
   border-radius: 1em;
 }
 
@@ -13393,9 +13398,6 @@ legend {
 
 .hide {
   display: none;
-}
-
-#envelope_img {
 }
 
 .text-bubble-received,
@@ -13440,6 +13442,12 @@ legend {
 }
 
 #modal_body {
+  border-bottom: 1px solid var(--bs-cyan);
+  border-radius: 1em;
+}
+
+#friend_list_info,
+#chat_list_info {
   border-bottom: 1px solid var(--bs-cyan);
   border-radius: 1em;
 }

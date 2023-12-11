@@ -12,7 +12,6 @@ router.get("/", (req, res) => {
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
     }
     res.render("main", {
-        description: "Home",
         user: req.user,
         warning_email: false,
         warning_username: false,
@@ -28,7 +27,6 @@ router.get("/login", (req, res) => {
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
     }
     res.render("main", {
-        description: "Login",
         warning_email: req.flash("warning_email"),
         warning_password: req.flash("warning_password"),
         user_error_input: req.flash("error_input"),
@@ -42,7 +40,6 @@ router.get("/signup", (req, res) => {
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
     }
     res.render("main", {
-        description: "Sign up",
         user_exists: req.flash("user_exists"),
         warning_email: false,
         warning_username: false,

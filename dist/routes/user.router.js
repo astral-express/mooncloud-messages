@@ -19,7 +19,6 @@ router.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
     const friendsArray = yield friendship_controller_1.FriendshipController.getAllFriendsOfAUser(`${req.params.id}`);
     res.render("mooncloud/mooncloud", {
-        description: "Profile",
         user: req.user,
         friends: friendsArray,
     });
