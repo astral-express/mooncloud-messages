@@ -136,23 +136,28 @@ mongoose.connection.once("open", () => {
     io.use(async (socket, next) => {
         const sessionID = socket.request.session.id;
         if (sessionID) {
-            const result = await sessions.findOne({
-                _id: sessionID,
-            })
-            if (result) {
-                let session = result.session;
-                let parsedSession = JSON.parse(session);
-                let userID = parsedSession.passport.user;
-                const user = await localUserModel.findOne({
-                    _id: userID,
+            try {
+                const result = await sessions.findOne({
+                    _id: sessionID,
                 })
-                if (user) {
-                    socket.data.sessionID = sessionID;
-                    socket.data.userID = userID;
-                    socket.data.username = user?.username;
-                    return next();
+                if (result) {
+                    let session = result.session;
+                    let parsedSession = JSON.parse(session);
+                    let userID = parsedSession.passport.user;
+                    const user = await localUserModel.findOne({
+                        _id: userID,
+                    })
+                    if (user) {
+                        socket.data.sessionID = sessionID;
+                        socket.data.userID = userID;
+                        socket.data.username = user?.username;
+                        return next();
+                    }
+                    else throw new Error("No user found during SocketIO session search");
                 }
-                else throw new Error("No user found during SocketIO session search");
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
             }
         } else throw new Error("No sessionID found");
     })
@@ -169,6 +174,28 @@ mongoose.connection.once("open", () => {
             sessionID: socket.data.sessionID,
             userID: socket.data.userID,
             username: socket.data.username,
+        })
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("check-friend-requests", async (user) => {
+            try {
+                let result = await FriendshipController.findFriendships(user);
+                if (result) {
+                    let multiQuery = [];
+                    for (let i = 0; i < result.length; i++) {
+                        if (result[i].status === 2) {
+                            multiQuery.push(result[i].username);
+                        }
+                    }
+                    let pendingFriendRequests = await LocalUsersController.getLocalUser("", multiQuery);
+                    console.log(pendingFriendRequests)
+                    socket.emit("pending-friend-requests", { pendingFriendRequests })
+                }
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
         })
     })
 
@@ -266,25 +293,14 @@ mongoose.connection.once("open", () => {
     })
 
     io.on("connection", (socket) => {
-        socket.on("seen", async (chatID, messageID) => {
-            try {
-                let seenDate = await ChatController.updateIfMessageIsSeen(chatID, messageID);
-                // if(seenDate) {
-                //     socket.emit("update-seen-status", { chatID, seenDate });
-                // }
-            } catch (err: any) {
-                console.error(err);
-                return undefined;
-            }
-        })
-    })
-
-    io.on("connection", (socket) => {
         socket.on("friend-request", async (user, target) => {
             try {
                 let result = await FriendshipController.requestFriend(user, target);
                 if (result) {
                     socket.emit("is-friend-request-successful", { result });
+                    socket.to(target).to(socket.data.username).emit("new-friend-request", {
+                        from: user,
+                    })
                 }
             } catch (err: any) {
                 console.error(err);
@@ -306,14 +322,17 @@ mongoose.connection.once("open", () => {
         });
     });
 
-    // io.on("connection", (socket) => {
-    //     socket.on("check-friendship-status", async (username, friendshipID) => {
-    //         let status = await FriendshipController.findFriendship("", "", friendshipID);
-    //         if (status) {
-    //             socket.emit("friendship-status", { friendshipID, status, username });
-    //         }
-    //     })
-    // })
+    io.on("connection", (socket) => {
+        socket.on("accept-friend-request", async (user) => {
+
+        })
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("decline-friend-request", async (user) => {
+
+        })
+    })
 
     server.listen(port, "0.0.0.0", () => logger.info("Server running on port: " + port));
     server.on("error", onError);

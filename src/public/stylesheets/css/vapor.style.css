@@ -13441,13 +13441,14 @@ legend {
   font-size: 13px;
 }
 
-#modal_body {
+#friend_list_info,
+#chat_list_info,
+#modal_body,
+#notification_row {
   border-bottom: 1px solid var(--bs-cyan);
   border-radius: 1em;
 }
 
-#friend_list_info,
-#chat_list_info {
-  border-bottom: 1px solid var(--bs-cyan);
-  border-radius: 1em;
+#notification_row {
+  border-radius: 0.4em;
 }

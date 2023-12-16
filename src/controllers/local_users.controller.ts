@@ -47,20 +47,32 @@ export namespace LocalUsersController {
     }
 
     /**
-     * @param query: string
+     * @param regexQuery: string, 
+     * @param multiQuery?: String[]
      * @returns array
      * 
-     * Takes a string argument, either user ID or username
-     * and returns an user object
+     * Takes a string argument or multiple strings in an array,
+     * and returns array of user objects
      */
-    export async function getLocalUser(query: string): Promise<UserArray[] | null | undefined> {
+    export async function getLocalUser(regexQuery: string, multiQuery?: String[]): Promise<UserArray[] | null | undefined> {
         let usersData = [];
+        let query: any;
         try {
-            let users = await localUserModel.find({
-                username: {
-                    $regex: query,
-                },
-            });
+            if (multiQuery) {
+                query = {
+                    username: {
+                        $in: multiQuery,
+                    }
+                }
+            }
+            if (regexQuery) {
+                query = {
+                    username: {
+                        $regex: regexQuery,
+                    },
+                }
+            }
+            let users = await localUserModel.find(query);
             for (let i = 0; i < users.length; i++) {
                 usersData.push({
                     username: users[i].username,

@@ -23,9 +23,7 @@ let activePill;
 let messageCounter = 0;
 let messageNavbarCounter = 0;
 let lastKnownScrollPosition = 0;
-let mooncloudServiceFirstTimeLoad = false;
 let currentURL = window.location.pathname;
-let isHomePage = false;
 
 function created() {
   const sessionID = localStorage.getItem("sessionID");
@@ -47,12 +45,14 @@ socket.on("connect_error", (err) => {
     new Error("Unauthorized access");
   }
 });
+
 socket.on("session", ({ sessionID, userID, username }) => {
   socket.auth = sessionID;
   localStorage.setItem("sessionID", sessionID);
   socket.userID = userID;
   socket.username = username;
   checkIfItsHomePage(username);
+  socket.emit("check-friend-requests", username);
 });
 
 socket.on("message-sent", ({ content, chatID, messageID }) => {
@@ -73,6 +73,10 @@ socket.on("friend-list-rows-load", ({ chatsData }) => {
 
 socket.on("loaded-chat", ({ chatData }) => {
   chatMessagesLoad(chatData);
+});
+
+socket.on("pending-friend-requests", ({ pendingFriendRequests }) => {
+  notificationsController(pendingFriendRequests);
 });
 
 /**
@@ -618,6 +622,101 @@ function scrollController(chatID, messageID) {
     if (container[i].scrollTop <= container[i].scrollHeight - 633) {
       container[i].scrollTo(0, container[i].scrollHeight);
     }
+  }
+}
+
+function notificationsController(data) {
+  if (data) {
+    let notificationsTab = document.getElementById("notifications_tab");
+    let notificationsCounter = document.getElementById("notifications-count");
+    notificationsCounter.textContent = data.length;
+    notificationsTab.innerHTML = data
+      .map((user) => {
+        if (user.avatar !== "") {
+          return `<div id="notification_row" class="p-3 pt-1 mb-4">
+                      <div class="d-flex flex-column justify-content-center align-items-center">
+                          <div class="d-flex align-items-center">
+                              <div class="user-avatar">
+                                  <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
+                              </div>
+                              <div class="user-username ms-2 py-2 py-md-0">
+                                  <p id="friend_list_row_username" class="m-0 fs-6"><span class="text-secondary fs-5"><strong>${user.username}</strong></span>  has sent you a friend request</p>
+                              </div>
+                          </div>
+                          <div class="d-flex align-items-center py-2">
+                              <button
+                                  decline-btn="${user.username}"
+                                  type="button"
+                                  class="btn btn-danger me-1"
+                              >
+                              Decline
+                              <i class="fa-solid fa-xmark"></i>
+                              </button>
+                              <button
+                                  accept-btn="${user.username}"
+                                  type="button"
+                                  class="btn btn-success ms-1"
+                              >
+                              Accept
+                              <i class="fa-solid fa-check"></i>
+                              </button>
+                          </div>
+                      </div>
+                  </div>`;
+        } else {
+          return `<div id="notification_row" class="p-3 pt-1 mb-4">
+                      <div class="d-flex flex-column justify-content-center align-items-center">
+                          <div class="d-flex align-items-center">
+                              <div class="user-avatar">
+                                  <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.defaultAvatar}" alt="user-row-avatar" />
+                              </div>
+                              <div class="user-username ms-2 py-2 py-md-0">
+                                  <p id="friend_list_row_username" class="m-0 fs-6"><span class="text-secondary fs-5"><strong>${user.username}</strong></span>  has sent you a friend request</p>
+                              </div>
+                          </div>
+                          <div class="d-flex align-items-center py-2">
+                              <button
+                                  decline-btn="${user.username}"
+                                  type="button"
+                                  class="btn btn-danger me-1"
+                              >
+                              Decline
+                              <i class="fa-solid fa-xmark"></i>
+                              </button>
+                              <button
+                                  accept-btn="${user.username}"
+                                  type="button"
+                                  class="btn btn-success ms-1"
+                              >
+                              Accept
+                              <i class="fa-solid fa-check"></i>
+                              </button>
+                          </div>
+                      </div>
+                  </div>`;
+        }
+      })
+      .join(" ");
+    notificationsButtonsController();
+  }
+}
+
+function notificationsButtonsController() {
+  let acceptBtn = document.querySelectorAll("[accept-btn]");
+  let declineBtn = document.querySelectorAll("[decline-btn]");
+
+  for (let i = 0; i < acceptBtn.length; i++) {
+    acceptBtn[i].addEventListener("click", (e) => {
+      let user = acceptBtn[i].getAttribute("accept-btn");
+      socket.emit("accept-friend-request", user);
+    });
+  }
+
+  for (let i = 0; i < declineBtn.length; i++) {
+    declineBtn[i].addEventListener("click", (e) => {
+      let user = declineBtn[i].getAttribute("decline-btn");
+      socket.emit("decline-friend-request", user);
+    });
   }
 }
 
