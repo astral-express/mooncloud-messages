@@ -1,4 +1,4 @@
-setTimeout(() => {
+setTimeout( async () => {
   const listTab = document.getElementById("list-tab");
   const chatTab = document.getElementById("chat_friend_list");
   const friendListTab = document.getElementById("friend_list_tab");

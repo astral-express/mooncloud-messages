@@ -43,6 +43,7 @@ socket.on("session", ({ sessionID, userID, username }) => {
   socket.username = username;
   checkIfItsHomePage(username);
   socket.emit("friend-list-refresh", username);
+  socket.emit("update-chat-list", username);
   socket.emit("check-friend-requests", username);
 });
 
@@ -85,6 +86,10 @@ socket.on("is-friend-declined", ({ result }) => {
 socket.on("is-friend-accepted", ({ result }) => {
   socket.emit("friend-list-refresh", socket.username);
   removeNotification(result);
+});
+
+socket.on("open-initiated-chat", ({ requesterUsername, receiverUsername }) => {
+  updateChatList(requesterUsername, receiverUsername);
 });
 
 /**
@@ -271,7 +276,7 @@ function appendReceivedMessage(
   dateSent,
   dateRead
 ) {
-  let chats = document.querySelectorAll("div#chat_container > div.chat");
+  let chats = document.querySelectorAll("[chat-container]");
   for (let i = 0; i < chats.length; i++) {
     let friend = chats[i].getAttribute("friend");
     if (friend === from) {
@@ -330,7 +335,7 @@ function appendReceivedMessage(
 }
 
 function appendSentMessage(message, chatID, messageID, dateSent, dateRead) {
-  let chats = document.querySelectorAll(`div#chat_container > div.chat`);
+  let chats = document.querySelectorAll("[chat-container]");
   for (let i = 0; i < chats.length; i++) {
     let friend = chats[i].getAttribute("friend");
     if (friend === socket.friend) {
@@ -474,20 +479,35 @@ function chatsListLoad(chatsData) {
   chatListGroup.innerHTML = userDetails
     .map((user) => {
       if (!user.lastMessage) {
-        return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0">
-          <div class="d-flex justify-content-left align-items-center">
-            <div class="user-avatar">
-              <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
+        if (user.avatar) {
+          return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
+            <div class="d-flex justify-content-center align-items-center">
+              <div class="user-avatar">
+                <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
+              </div>
+              <div class="user-chat px-2 ms-1 my-3 py-md-0">
+                <p id="friend_list_row_username" class="m-0 mb-1 fs-5">${user.name}</p>
+                <p id="last_message_${user.chatID}" class="m-0 mb-1 fs-6" chat="${user.chatID}"></p>
+              </div>
             </div>
-            <div class="user-chat px-2 ms-1 my-3 py-md-0">
-              <p id="friend_list_row_username" class="m-0 mb-1 fs-5">${user.name}</p>
-              <p id="last_message_${user.chatID}" class="m-0 mb-1 fs-6" chat="${user.chatID}"></p>
+          </div>`;
+        } else {
+          return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
+            <div class="d-flex justify-content-center align-items-center">
+              <div class="user-avatar">
+                <img id="friend_list_row_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="default-user-row-avatar" />
+              </div>
+              <div class="user-chat px-2 ms-1 my-3 py-md-0">
+                <p id="friend_list_row_username" class="m-0 mb-1 fs-5">${user.name}</p>
+                <p id="last_message_${user.chatID}" class="m-0 mb-1 fs-6" chat="${user.chatID}"></p>
+              </div>
             </div>
-          </div>
-        </div>`;
+          </div>`;
+        }
       } else {
-        return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0">
-          <div class="d-flex justify-content-left align-items-center">
+        if (user.avatar) {
+          return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
+          <div class="d-flex justify-content-center align-items-center">
             <div class="user-avatar">
               <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
             </div>
@@ -497,15 +517,37 @@ function chatsListLoad(chatsData) {
             </div>
           </div>
         </div>`;
+        } else {
+          return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
+          <div class="d-flex justify-content-center align-items-center">
+            <div class="user-avatar">
+              <img id="friend_list_row_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="default-user-row-avatar" />
+            </div>
+            <div class="user-chat px-2 ms-1 my-1 py-md-0">
+              <p id="friend_list_row_username" class="m-0 mb-1 fs-5">${user.name}</p>
+              <p id="last_message_${user.chatID}" class="m-0 mb-1 fs-6" chat="${user.chatID}">${user.sender} ${user.lastMessage}</p>
+            </div>
+          </div>
+        </div>`;
+        }
       }
     })
     .join(" ");
 
   chatTabContent.innerHTML = userDetails
     .map((user) => {
-      return `<div class="tab-pane" id="tab-chat-with-${user.name}" role="tabpanel">
+      if (!user.avatar) {
+        return `<div class="tab-pane" id="tab-chat-with-${user.name}" role="tabpanel">
         <div id="chat_container" class="d-flex flex-column justify-content-between ms-3 p-2">
-            <div id="chat_with_${user.name}" class="chat d-flex flex-column justify-content-between p-2 scrollable" friend="${user.name}" chat="${user.chatID}"></div>
+            <div class="separator">
+                <div id="chat_header" class="d-flex align-items-center p-2 px-4 z-3">
+                    <div id="header_avatar">
+                        <img id="friend_list_row_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="default-user-row-avatar" />
+                    </div>
+                    <p id="header_username" class="m-0 ms-2 fs-5">${user.name}</p>
+                </div>
+                <div chat-container="${user.name}" id="chat_with_${user.name}" class="d-flex flex-column justify-content-between p-2 scrollable" friend="${user.name}" chat="${user.chatID}"></div>
+            </div>
             <div class="chat-input">
                 <form id="message_form" class="mb-1">
                     <div class="input-group">
@@ -516,8 +558,43 @@ function chatsListLoad(chatsData) {
             </div>
         </div>
     </div>`;
+      } else {
+        return `<div class="tab-pane" id="tab-chat-with-${user.name}" role="tabpanel">
+        <div id="chat_container" class="d-flex flex-column justify-content-between ms-3 p-2">
+            <div class="separator">
+                <div id="chat_header" class="d-flex align-items-center p-2 px-4 z-3">
+                    <div id="header_avatar">
+                        <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
+                    </div>
+                    <p id="header_username" class="m-0 ms-2 fs-5">${user.name}</p>
+                </div>
+                <div chat-container="${user.name}" id="chat_with_${user.name}" class="d-flex flex-column justify-content-between p-2 scrollable" friend="${user.name}" chat="${user.chatID}"></div>
+            </div>
+            <div class="chat-input">
+                <form id="message_form" class="mb-1">
+                    <div class="input-group">
+                        <input id="message_input" type="text" class="form-control text-white" placeholder="Type a message..." aria-label="Recipient's username" aria-describedby="button-addon2">
+                        <button id="send_message_to_${user.name}" class="btn btn-secondary" type="submit" chat="${user.chatID}">Send <i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>`;
+      }
     })
     .join(" ");
+
+  const triggerTabList = document.querySelectorAll(
+    "#chat_list_group div#friend_list_row"
+  );
+  triggerTabList.forEach((triggerEl) => {
+    const tabTrigger = new bootstrap.Tab(triggerEl);
+
+    triggerEl.addEventListener("click", (event) => {
+      event.preventDefault();
+      tabTrigger.show();
+    });
+  });
   messagesTabActive();
 }
 
@@ -843,7 +920,8 @@ function updateFriendList(friends) {
                     </div>
                     <div class="user-details-action">
                         <button
-                            id="initiate_chat_with_${friend.username}>"
+                            friend="${friend.username}"
+                            id="initiate_chat"
                             type="button"
                             class="btn btn-secondary"
                             >
@@ -873,7 +951,8 @@ function updateFriendList(friends) {
                     </div>
                     <div class="user-details-action">
                         <button
-                            id="initiate_chat_with_${friend.username}>"
+                            friend="${friend.username}"
+                            id="initiate_chat"
                             type="button"
                             class="btn btn-secondary"
                             >
@@ -886,7 +965,58 @@ function updateFriendList(friends) {
         }
       })
       .join(" ");
+    messageButtonsController();
   }
+}
+
+function messageButtonsController() {
+  let initiateButtons = document.querySelectorAll("#initiate_chat");
+  for (let i = 0; i < initiateButtons.length; i++) {
+    initiateButtons[i].addEventListener("click", (e) => {
+      let friend = initiateButtons[i].getAttribute("friend");
+      socket.emit("initiate-chat", socket.username, friend);
+    });
+  }
+}
+
+function updateChatList(user, friend) {
+  socket.emit("update-chat-list", user);
+  openChatTab(user, friend);
+}
+
+function openChatTab(user, friend) {
+  if (user && friend) {
+    const friendsTab = document.getElementById("pills-friends");
+    const friendsTabButton = document.getElementById("pills-friends-tab");
+
+    const messagesTab = document.getElementById("pills-messages");
+    const messagesTabButton = document.getElementById("pills-messages-tab");
+
+    friendsTab.classList.remove("active");
+    setTimeout(() => {
+      friendsTab.classList.remove("show");
+    }, 200);
+
+    messagesTab.classList.add("active");
+    setTimeout(() => {
+      messagesTab.classList.add("show");
+    }, 200);
+
+    friendsTabButton.classList.remove("active");
+    friendsTabButton.setAttribute("aria-selected", "false");
+    friendsTabButton.setAttribute("tabindex", "-1");
+
+    messagesTabButton.classList.add("active");
+    messagesTabButton.setAttribute("aria-selected", "true");
+    messagesTabButton.removeAttribute("tabindex", "-1");
+    openSelectedChat(friend);
+  }
+}
+
+function openSelectedChat(friend) {
+    const friendListRow = document.querySelector(`#chat_list_group div[href="#tab-chat-with-${friend}"]`);
+    friendListRow.click();
+    console.log(friendListRow);
 }
 
 // EVENT LISTENERS

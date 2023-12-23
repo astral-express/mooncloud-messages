@@ -4,10 +4,14 @@ type membersType = [
     {
         user: string,
         avatar: string,
+        email: string,
+        status: string,
     },
     {
         user: string,
         avatar: string,
+        email: string,
+        status: string,
     },
 ]
 
@@ -24,10 +28,14 @@ let membersSchema = new mongoose.Schema<membersType>(
         {
             user: String,
             avatar: String,
+            email: String,
+            status: String,
         },
         {
             user: String,
             avatar: String,
+            email: String,
+            status: String,
         },
     ]
 )

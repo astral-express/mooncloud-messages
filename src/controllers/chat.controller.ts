@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { chatModel } from "../database/schemas/chat.schema";
+import { localUserModel } from "../database/schemas/local_user.schema";
 
 export namespace ChatController {
     /**
@@ -38,10 +39,10 @@ export namespace ChatController {
                         }
                     ]
             });
-            if (!chat) {
-                return null;
-            } else {
+            if (chat) {
                 return chat[0].id;
+            } else {
+                return null;
             }
         } catch (err: any) {
             return undefined;
@@ -83,32 +84,48 @@ export namespace ChatController {
      * If function checkIfChatExists returns false, this function will be called
      * in order to create a new chat record in db for given users in args
      */
-    export async function initiateChat(sender: string, receiver: string, receivers?: Array<string>): Promise<Boolean | null | undefined> {
-        let desc;
+    export async function initiateChat(sender: string, receiver?: string, receivers?: Array<string>): Promise<Boolean | null | undefined> {
+        let desc: string;
+        let senderQuery: any;
+        let receiverQuery: any;
         if (receivers !== null) {
             desc = "private chat"
         } else {
             desc = "group chat"
         }
         try {
-            await chatModel.create({
-                chatID: randomUUID(),
-                time: new Date(),
-                members: [
-                    {
-                        user: sender,
-                        avatar: sender,
-                    },
-                    {
-                        user: receiver,
-                        avatar: receiver,
-                    }
-                ],
-                messages: [],
-                description: desc,
-                total_messages: 0,
-            })
-            return true;
+            senderQuery = {
+                username: sender,
+            }
+            receiverQuery = {
+                username: receiver,
+            }
+            let senderResult = await localUserModel.findOne(senderQuery);
+            let receiverResult = await localUserModel.findOne(receiverQuery);
+            if (senderResult && receiverResult) {
+                await chatModel.create({
+                    chatID: randomUUID(),
+                    time: new Date(),
+                    members: [
+                        {
+                            user: senderResult.username,
+                            avatar: senderResult.avatar,
+                            email: senderResult.email,
+                            status: senderResult.status,
+                        },
+                        {
+                            user: receiverResult.username,
+                            avatar: receiverResult.avatar,
+                            email: receiverResult.email,
+                            status: receiverResult.status,
+                        }
+                    ],
+                    messages: [],
+                    description: desc,
+                    total_messages: 0,
+                })
+                return true;
+            } else return null;
         } catch (err: any) {
             return undefined;
         }
@@ -154,14 +171,14 @@ export namespace ChatController {
      * 
      * Loads all of the chat's messages and sends them to the user for front end rendering
      */
-    export async function loadChat(chatID: string | null | undefined): Promise<any | undefined> {
+    export async function loadChat(chatID: string | null | undefined): Promise<any | null | undefined> {
         try {
             let chat = await chatModel.findOne({
                 chatID: chatID,
             });
             if (chat) {
                 return chat;
-            }
+            } else return null;
         } catch (err: any) {
             return undefined;
         }

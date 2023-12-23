@@ -215,46 +215,6 @@ mongoose.connection.once("open", () => {
         })
     })
 
-    // io.on("connection", (socket) => {
-    //     socket.on("selected-user", async (receiverUsername) => {
-    //         let senderUsername: string = socket.data.username;
-    //         try {
-    //             let chatID = await ChatController.checkIfChatExists(senderUsername, receiverUsername);
-    //             if (!chatID) {
-    //                 let initiated = await ChatController.initiateChat(senderUsername, receiverUsername);
-    //                 console.log(initiated)
-    //                 if (!initiated) {
-    //                     return false;
-    //                 };
-    //                 socket.emit("initiate-chat", { initiated });
-    //             } else {
-    //                 let chatData = await ChatController.loadChat(chatID);
-    //                 socket.emit("loaded-chat", { chatData });
-    //             }
-    //         } catch (err) {
-    //             console.error(err);
-    //             return undefined;
-    //         }
-    //     }
-    //     )
-    // })
-
-    //SINGLE CHAT LOAD
-    io.on("connection", (socket) => {
-        socket.on("request-single-chat-load", async (chatID) => {
-            try {
-                let chatData = await ChatController.loadChat(chatID);
-                if (chatData) {
-                    socket.emit("single-chat-loaded-response", { chatData })
-                } else return null;
-            }
-            catch (err: any) {
-                console.error(err);
-                return undefined;
-            }
-        })
-    })
-
     io.on("connection", (socket) => {
         socket.on("friend-request", async (user, target) => {
             try {
@@ -355,17 +315,53 @@ mongoose.connection.once("open", () => {
             }
         })
     })
+    
+    io.on("connection", (socket) => {
+        socket.on("initiate-chat", async (requesterUsername, receiverUsername) => {
+            try {
+                let chatID = await ChatController.checkIfChatExists(requesterUsername, receiverUsername);
+                if (!chatID) {
+                    let initiated = await ChatController.initiateChat(requesterUsername, receiverUsername);
+                    if (!initiated) {
+                        return null;
+                    };
+                }
+                socket.emit("open-initiated-chat", { requesterUsername, receiverUsername });
+            } catch (err) {
+                console.error(err);
+                return undefined;
+            }
+        }
+        )
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("request-single-chat-load", async (chatID) => {
+            try {
+                let chatData = await ChatController.loadChat(chatID);
+                if (chatData) {
+                    socket.emit("single-chat-loaded-response", { chatData })
+                } else return null;
+            }
+            catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
+    })
 
     io.on("connection", async (socket) => {
-        try {
-            let chatsData = await ChatController.findAllChatsOfAUser(`${socket.data.username}`);
-            if (chatsData) {
-                socket.emit("friend-chats-load", { chatsData })
-            } else return null;
-        } catch (err: any) {
-            console.error(err);
-            return undefined;
-        }
+        socket.on("update-chat-list", async (user) => {
+            try {
+                let chatsData = await ChatController.findAllChatsOfAUser(user);
+                if (chatsData) {
+                    socket.emit("friend-chats-load", { chatsData })
+                } else return null;
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
     })
 
     io.on("connection", (socket) => {
