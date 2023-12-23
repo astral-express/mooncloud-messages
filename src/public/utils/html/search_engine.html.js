@@ -63,7 +63,7 @@ function searchedUsers(users, friendships) {
         const cardDesc = card.querySelector("[desc]");
         // avatar
         cardAvatar.src =
-          users[i].avatar !== "default_user_avatar.jpg"
+          users[i].avatar !== ""
             ? `assets/users/uploads/${users[i].avatar}`
             : `assets/users/default/default_user_avatar.jpg`;
         // username

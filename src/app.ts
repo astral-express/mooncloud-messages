@@ -178,43 +178,6 @@ mongoose.connection.once("open", () => {
     })
 
     io.on("connection", (socket) => {
-        socket.on("check-friend-requests", async (user) => {
-            try {
-                let result = await FriendshipController.findFriendships(user);
-                if (result) {
-                    let multiQuery = [];
-                    for (let i = 0; i < result.length; i++) {
-                        if (result[i].status === 2) {
-                            multiQuery.push(result[i].username);
-                        }
-                    }
-                    let pendingFriendRequests = await LocalUsersController.getLocalUser("", multiQuery);
-                    console.log(pendingFriendRequests)
-                    socket.emit("pending-friend-requests", { pendingFriendRequests })
-                }
-            } catch (err: any) {
-                console.error(err);
-                return undefined;
-            }
-        })
-    })
-
-    /**
-     * On page load, call to pre-load friend list
-     */
-    io.on("connection", async (socket) => {
-        try {
-            let chatsData = await ChatController.findAllChatsOfAUser(`${socket.data.username}`);
-            if (chatsData) {
-                socket.emit("friend-list-rows-load", { chatsData })
-            } else return null;
-        } catch (err: any) {
-            console.error(err);
-            return undefined;
-        }
-    })
-
-    io.on("connection", (socket) => {
         socket.on("send-private-message", async (content, to, chatID) => {
             try {
                 let messageID = await ChatController.sendMessage(socket.data.username, content, chatID);
@@ -278,11 +241,11 @@ mongoose.connection.once("open", () => {
 
     //SINGLE CHAT LOAD
     io.on("connection", (socket) => {
-        socket.on("load-chat", async (chatID) => {
+        socket.on("request-single-chat-load", async (chatID) => {
             try {
                 let chatData = await ChatController.loadChat(chatID);
                 if (chatData) {
-                    socket.emit("loaded-chat", { chatData })
+                    socket.emit("single-chat-loaded-response", { chatData })
                 } else return null;
             }
             catch (err: any) {
@@ -298,8 +261,9 @@ mongoose.connection.once("open", () => {
                 let result = await FriendshipController.requestFriend(user, target);
                 if (result) {
                     socket.emit("is-friend-request-successful", { result });
-                    socket.to(target).to(socket.data.username).emit("new-friend-request", {
+                    socket.to(target).emit("new-friend-request", {
                         from: user,
+                        to: target,
                     })
                 }
             } catch (err: any) {
@@ -307,6 +271,101 @@ mongoose.connection.once("open", () => {
                 return undefined;
             }
         })
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("check-friend-requests", async (user) => {
+            try {
+                let result = await FriendshipController.findFriendships(user);
+                if (result) {
+                    let multiQueryFriendships = [];
+                    for (let i = 0; i < result.length; i++) {
+                        if (result[i].status === 2) {
+                            multiQueryFriendships.push(result[i].friendship_id);
+                        }
+                    }
+                    let multiFriendshipData = await FriendshipController.findFriendshipsViaIDs(multiQueryFriendships);
+                    if (multiFriendshipData) {
+                        let multiQueryUsers = [];
+                        for (let i = 0; i < multiFriendshipData.length; i++) {
+                            if (multiFriendshipData[i].receiver === user) {
+                                multiQueryUsers.push(multiFriendshipData[i].requester);
+                            }
+                        }
+                        let pendingFriendRequests = await LocalUsersController.getLocalUser("", multiQueryUsers);
+                        socket.emit("pending-friend-requests", { pendingFriendRequests });
+                    }
+                }
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
+    })
+
+    io.on("connection", async (socket) => {
+        socket.on("accept-friend-request", async (requester, receiver) => {
+            if (requester) {
+                try {
+                    let friendship = await FriendshipController.findAFriendshipViaRequester(requester, receiver);
+                    if (friendship) {
+                        let result = await FriendshipController.acceptFriend(friendship);
+                        if (result) {
+                            socket.to(requester).emit("is-friend-accepted", { result });
+                            socket.emit("is-friend-accepted", { result });
+                        }
+                    }
+                } catch (err: any) {
+                    console.error(err);
+                    return undefined;
+                }
+            }
+        })
+    })
+
+    io.on("connection", async (socket) => {
+        socket.on("decline-friend-request", async (requester, receiver) => {
+            if (requester) {
+                try {
+                    let friendship = await FriendshipController.findAFriendshipViaRequester(requester, receiver);
+                    let result = await FriendshipController.rejectFriend(friendship);
+                    socket.emit("is-friend-declined", { result });
+                } catch (err: any) {
+                    console.error(err);
+                    return undefined;
+                }
+            }
+        })
+    })
+
+    io.on("connection", async (socket) => {
+        socket.on("friend-list-refresh", async (user) => {
+            if (user) {
+                try {
+                    let friends = await FriendshipController.getAllFriends(user);
+                    if (friends) {
+                        socket.emit("friend-list-update", { friends });
+                    } else {
+                        return null;
+                    }
+                } catch (err: any) {
+                    console.error(err);
+                    return undefined;
+                }
+            }
+        })
+    })
+
+    io.on("connection", async (socket) => {
+        try {
+            let chatsData = await ChatController.findAllChatsOfAUser(`${socket.data.username}`);
+            if (chatsData) {
+                socket.emit("friend-chats-load", { chatsData })
+            } else return null;
+        } catch (err: any) {
+            console.error(err);
+            return undefined;
+        }
     })
 
     io.on("connection", (socket) => {
@@ -321,18 +380,6 @@ mongoose.connection.once("open", () => {
             }
         });
     });
-
-    io.on("connection", (socket) => {
-        socket.on("accept-friend-request", async (user) => {
-
-        })
-    })
-
-    io.on("connection", (socket) => {
-        socket.on("decline-friend-request", async (user) => {
-
-        })
-    })
 
     server.listen(port, "0.0.0.0", () => logger.info("Server running on port: " + port));
     server.on("error", onError);

@@ -35,47 +35,7 @@
             </div>
           </div>
           <!-- USER PROFILE INFO -->
-          <div class="tab-content ms-4" id="v-pills-tabContent">
-            <% if(friends === undefined) { %>
-            <% } else { %>
-                <% for(let i = 0; i < friends.length; i++) { %>
-                <div
-                class="tab-pane fade"
-                id="v-pills-profile-<%= friends[i].username %>"
-                role="tabpanel"
-                aria-labelledby="v-pills-profile-tab"
-                tabindex="0"
-                >
-                <!-- USER PROFILE DETAILS -->
-                <div id="user_details" class="d-flex flex-column align-items-center bg-dark p-4">
-                    <div class="user-details-avatar">
-                        <% if(friends[i].avatar != "" ) { %>
-                        <img id="user_details_avatar" class="me-1" src="assets/users/uploads/<%= friends[i].avatar %>" alt="user-details-avatar" />
-                        <% } else { %>
-                        <img id="user_details_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="user-details-avatar" />
-                        <% } %>
-                    </div>
-                    <div id="user_details_username" class="user-details-username pt-2 pb-1"> 
-                        <p class="m-0"><%= friends[i].username %></p>
-                    </div>
-                    <div class="user-details-description w-85 pb-3">
-                        <p class="m-0 small text-break text-center">Lorem ipsum dolor sit amet.</p>
-                    </div>
-                    <div class="user-details-action">
-                        <button
-                            id="initiate_chat_with_<%= friends[i].username %>"
-                            type="button"
-                            class="btn btn-secondary"
-                            >
-                            <i class="fa-solid fa-message me-1"></i>
-                            Message
-                        </button>
-                    </div>
-                </div>
-                </div>
-                <% } %>
-            <% } %>
-          </div>
+          <div class="tab-content ms-4" id="v-pills-tabContent"></div>
         </div>
       </section>
     </div>
@@ -196,4 +156,4 @@
   type="module"
   src="../public/utils/html/client.socket.html.js"
 ></script>
-<script type="module" src="../public/utils/html/friendlist_controller.html.js"></script>
+<script type="module" src="../public/utils/html/empty_tabs_controller.html.js"></script>

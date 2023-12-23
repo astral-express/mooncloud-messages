@@ -4,15 +4,6 @@ const pillsNavbar = document.querySelectorAll("ul#pills-tab > li.nav-item");
 const chatTabContent = document.getElementById("chat_tab_content");
 const chatListGroup = document.getElementById("chat_list_group");
 
-const chatInitiationBtn = document.querySelectorAll(
-  "div.user-details-action > button"
-);
-
-const pillsMessagesTab = document.getElementById("pills-messages-tab");
-const pillsFriendsTab = document.getElementById("pills-friends-tab");
-const pillsMessages = document.getElementById("pills-messages");
-const pillsFriends = document.getElementById("pills-friends");
-
 const socket = io();
 
 // Variables
@@ -22,7 +13,6 @@ let selectedChat;
 let activePill;
 let messageCounter = 0;
 let messageNavbarCounter = 0;
-let lastKnownScrollPosition = 0;
 let currentURL = window.location.pathname;
 
 function created() {
@@ -52,6 +42,7 @@ socket.on("session", ({ sessionID, userID, username }) => {
   socket.userID = userID;
   socket.username = username;
   checkIfItsHomePage(username);
+  socket.emit("friend-list-refresh", username);
   socket.emit("check-friend-requests", username);
 });
 
@@ -67,16 +58,33 @@ socket.on(
   }
 );
 
-socket.on("friend-list-rows-load", ({ chatsData }) => {
+socket.on("friend-chats-load", ({ chatsData }) => {
   chatsListLoad(chatsData);
 });
 
-socket.on("loaded-chat", ({ chatData }) => {
+socket.on("friend-list-update", ({ friends }) => {
+  updateFriendList(friends);
+});
+
+socket.on("single-chat-loaded-response", ({ chatData }) => {
   chatMessagesLoad(chatData);
+});
+
+socket.on("new-friend-request", ({ from, to }) => {
+  socket.emit("check-friend-requests", to);
 });
 
 socket.on("pending-friend-requests", ({ pendingFriendRequests }) => {
   notificationsController(pendingFriendRequests);
+});
+
+socket.on("is-friend-declined", ({ result }) => {
+  removeNotification(result);
+});
+
+socket.on("is-friend-accepted", ({ result }) => {
+  socket.emit("friend-list-refresh", socket.username);
+  removeNotification(result);
 });
 
 /**
@@ -616,7 +624,7 @@ function receivedMessageInfoMark(result) {
   }
 }
 
-function scrollController(chatID, messageID) {
+function scrollController() {
   let container = document.querySelectorAll("div#chat_container > div.chat");
   for (let i = 0; i < container.length; i++) {
     if (container[i].scrollTop <= container[i].scrollHeight - 633) {
@@ -668,7 +676,7 @@ function notificationsController(data) {
                       <div class="d-flex flex-column justify-content-center align-items-center">
                           <div class="d-flex align-items-center">
                               <div class="user-avatar">
-                                  <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.defaultAvatar}" alt="user-row-avatar" />
+                                  <img id="friend_list_row_avatar" class="me-1" src="assets/users/default/${user.defaultAvatar}" alt="user-row-avatar" />
                               </div>
                               <div class="user-username ms-2 py-2 py-md-0">
                                   <p id="friend_list_row_username" class="m-0 fs-6"><span class="text-secondary fs-5"><strong>${user.username}</strong></span>  has sent you a friend request</p>
@@ -707,16 +715,177 @@ function notificationsButtonsController() {
 
   for (let i = 0; i < acceptBtn.length; i++) {
     acceptBtn[i].addEventListener("click", (e) => {
-      let user = acceptBtn[i].getAttribute("accept-btn");
-      socket.emit("accept-friend-request", user);
+      let requester = acceptBtn[i].getAttribute("accept-btn");
+      socket.emit("accept-friend-request", requester, socket.username);
     });
   }
 
   for (let i = 0; i < declineBtn.length; i++) {
     declineBtn[i].addEventListener("click", (e) => {
-      let user = declineBtn[i].getAttribute("decline-btn");
-      socket.emit("decline-friend-request", user);
+      let requester = declineBtn[i].getAttribute("decline-btn");
+      socket.emit("decline-friend-request", requester, socket.username);
     });
+  }
+}
+
+function removeNotification(result) {
+  let notificationsTab = document.getElementById("notifications_tab");
+  let friendListRow = notificationsTab.querySelectorAll("#notification_row");
+  for (let i = 0; i < friendListRow.length; i++) {
+    let username =
+      friendListRow[i].childNodes[1].childNodes[1].childNodes[3].childNodes[1]
+        .childNodes[0].textContent;
+    if (result === username) {
+      friendListRow[i].remove();
+      checkIfNotificationsAreEmpty();
+    }
+  }
+}
+
+function checkIfNotificationsAreEmpty() {
+  const notificationsTab = document.getElementById("notifications_tab");
+  const notificationCount = document.getElementById("notifications-count");
+  notificationsTab.classList.add(
+    "d-flex",
+    "flex-column",
+    "justify-content-center",
+    "px-5",
+    notificationsTab.children.length <= 1
+  );
+  if (notificationsTab.children.length <= 1) {
+    let p = document.createElement("p");
+    p.setAttribute("id", "notification_info");
+    p.classList.add("text-center", "mx-5", "mt-3", "pb-3", "fs-6");
+    p.innerText =
+      "There are no notifications at the moment, you will be notified if anything arrives here!";
+    notificationsTab.append(p);
+    notificationCount.remove();
+  }
+}
+
+function updateFriendList(friends) {
+  if (friends) {
+    let friendListTab = document.getElementById("friend_list_tab");
+    let friendListTabDetails = document.getElementById("v-pills-tabContent");
+    friendListTab.innerHTML = friends
+      .map((friend) => {
+        if (friend.avatar !== "") {
+          return `<div id="friend_list_row" class="p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="user-avatar">
+                        <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${friend.avatar}" alt="user-row-avatar" />
+                    </div>
+                    <div class="user-username px-2 me-2 py-2 py-md-0">
+                        <p id="friend_list_row_username" class="m-0 fs-5">${friend.username}</p>
+                    </div>
+                    <button
+                        type="button"
+                        class="btn btn-secondary ms-md-2 ms-auto"
+                        id="v-pills-profile-tab"
+                        data-bs-toggle="pill"
+                        data-bs-target="#v-pills-profile-${friend.username}"
+                        role="tab"
+                        aria-controls="v-pills-profile"
+                        aria-selected="false"
+                    >
+                    Profile
+                    <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>`;
+        } else {
+          return `<div id="friend_list_row" class="p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="user-avatar">
+                        <img id="friend_list_row_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="default-user-row-avatar" />
+                    </div>
+                    <div class="user-username px-2 me-2 py-2 py-md-0">
+                        <p id="friend_list_row_username" class="m-0 fs-5">${friend.username}</p>
+                    </div>
+                    <button
+                        type="button"
+                        class="btn btn-secondary ms-md-2 ms-auto"
+                        id="v-pills-profile-tab"
+                        data-bs-toggle="pill"
+                        data-bs-target="#v-pills-profile-${friend.username}"
+                        role="tab"
+                        aria-controls="v-pills-profile"
+                        aria-selected="false"
+                    >
+                    Profile
+                    <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>`;
+        }
+      })
+      .join(" ");
+
+    friendListTabDetails.innerHTML = friends
+      .map((friend) => {
+        if (friend.avatar !== "") {
+          return `<div
+            class="tab-pane fade"
+            id="v-pills-profile-${friend.username}"
+            role="tabpanel"
+            aria-labelledby="v-pills-profile-tab"
+            tabindex="0"
+            >
+                <div id="user_details" class="d-flex flex-column align-items-center bg-dark p-4">
+                    <div class="user-details-avatar">
+                        <img id="user_details_avatar" class="me-1" src="assets/users/uploads/${friend.avatar}" alt="user-details-avatar" />
+                    </div>
+                    <div id="user_details_username" class="user-details-username pt-2 pb-1">
+                        <p class="m-0">${friend.username}</p>
+                    </div>
+                    <div class="user-details-description w-85 pb-3">
+                        <p class="m-0 small text-break text-center">Lorem ipsum dolor sit amet.</p>
+                    </div>
+                    <div class="user-details-action">
+                        <button
+                            id="initiate_chat_with_${friend.username}>"
+                            type="button"
+                            class="btn btn-secondary"
+                            >
+                            <i class="fa-solid fa-message me-1"></i>
+                            Message
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        } else {
+          return `<div
+            class="tab-pane fade"
+            id="v-pills-profile-${friend.username}"
+            role="tabpanel"
+            aria-labelledby="v-pills-profile-tab"
+            tabindex="0"
+            >
+                <div id="user_details" class="d-flex flex-column align-items-center bg-dark p-4">
+                    <div class="user-details-avatar">
+                        <img id="user_details_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="default-user-details-avatar" />
+                    </div>
+                    <div id="user_details_username" class="user-details-username pt-2 pb-1">
+                        <p class="m-0">${friend.username}</p>
+                    </div>
+                    <div class="user-details-description w-85 pb-3">
+                        <p class="m-0 small text-break text-center">Lorem ipsum dolor sit amet.</p>
+                    </div>
+                    <div class="user-details-action">
+                        <button
+                            id="initiate_chat_with_${friend.username}>"
+                            type="button"
+                            class="btn btn-secondary"
+                            >
+                            <i class="fa-solid fa-message me-1"></i>
+                            Message
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+      })
+      .join(" ");
   }
 }
 
@@ -741,7 +910,7 @@ const messagesTabActive = () => {
   friendListRows.forEach((row) => {
     row.addEventListener("click", (e) => {
       let chatID = e.currentTarget.getAttribute("chat");
-      socket.emit("load-chat", chatID);
+      socket.emit("request-single-chat-load", chatID);
       selectedChat = chatID;
       chatIdMap.forEach(isChatActive);
       let selected = chatIdMap.get(chatID);
