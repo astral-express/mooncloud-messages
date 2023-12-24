@@ -37,13 +37,15 @@ socket.on("connect_error", (err) => {
 });
 
 socket.on("session", ({ sessionID, userID, username }) => {
+  let request = null;
+  let friend = null;
   socket.auth = sessionID;
   localStorage.setItem("sessionID", sessionID);
   socket.userID = userID;
   socket.username = username;
   checkIfItsHomePage(username);
   socket.emit("friend-list-refresh", username);
-  socket.emit("update-chat-list", username);
+  socket.emit("update-chat-list", username, friend, request);
   socket.emit("check-friend-requests", username);
 });
 
@@ -59,8 +61,8 @@ socket.on(
   }
 );
 
-socket.on("friend-chats-load", ({ chatsData }) => {
-  chatsListLoad(chatsData);
+socket.on("friend-chats-load", ({ chatsData, user, friend, request }) => {
+  chatsListLoad(chatsData, user, friend, request);
 });
 
 socket.on("friend-list-update", ({ friends }) => {
@@ -439,7 +441,7 @@ function chatMessagesLoad(chatData) {
   }
 }
 
-function chatsListLoad(chatsData) {
+function chatsListLoad(chatsData, user, friend, request) {
   let userDetails = [];
   let lastMsgObj = {};
   for (let i = 0; i < chatsData.length; i++) {
@@ -481,7 +483,7 @@ function chatsListLoad(chatsData) {
       if (!user.lastMessage) {
         if (user.avatar) {
           return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
-            <div class="d-flex justify-content-center align-items-center">
+            <div class="d-flex justify-content-left align-items-center">
               <div class="user-avatar">
                 <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
               </div>
@@ -493,7 +495,7 @@ function chatsListLoad(chatsData) {
           </div>`;
         } else {
           return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
-            <div class="d-flex justify-content-center align-items-center">
+            <div class="d-flex justify-content-left align-items-center">
               <div class="user-avatar">
                 <img id="friend_list_row_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="default-user-row-avatar" />
               </div>
@@ -507,7 +509,7 @@ function chatsListLoad(chatsData) {
       } else {
         if (user.avatar) {
           return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
-          <div class="d-flex justify-content-center align-items-center">
+          <div class="d-flex justify-content-left align-items-center">
             <div class="user-avatar">
               <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
             </div>
@@ -519,7 +521,7 @@ function chatsListLoad(chatsData) {
         </div>`;
         } else {
           return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
-          <div class="d-flex justify-content-center align-items-center">
+          <div class="d-flex justify-content-left align-items-center">
             <div class="user-avatar">
               <img id="friend_list_row_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="default-user-row-avatar" />
             </div>
@@ -595,6 +597,9 @@ function chatsListLoad(chatsData) {
       tabTrigger.show();
     });
   });
+  if (request === "open-chat-section") {
+    openChatTab(user, friend);
+  }
   messagesTabActive();
 }
 
@@ -980,8 +985,8 @@ function messageButtonsController() {
 }
 
 function updateChatList(user, friend) {
-  socket.emit("update-chat-list", user);
-  openChatTab(user, friend);
+  let request = "open-chat-section";
+  socket.emit("update-chat-list", user, friend, request);
 }
 
 function openChatTab(user, friend) {
@@ -1014,9 +1019,10 @@ function openChatTab(user, friend) {
 }
 
 function openSelectedChat(friend) {
-    const friendListRow = document.querySelector(`#chat_list_group div[href="#tab-chat-with-${friend}"]`);
-    friendListRow.click();
-    console.log(friendListRow);
+  const friendListRow = document.querySelector(
+    `#chat_list_group div[href="#tab-chat-with-${friend}"]`
+  );
+  bootstrap.Tab.getInstance(friendListRow).show();
 }
 
 // EVENT LISTENERS

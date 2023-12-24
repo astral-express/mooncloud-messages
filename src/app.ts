@@ -315,7 +315,7 @@ mongoose.connection.once("open", () => {
             }
         })
     })
-    
+
     io.on("connection", (socket) => {
         socket.on("initiate-chat", async (requesterUsername, receiverUsername) => {
             try {
@@ -351,11 +351,15 @@ mongoose.connection.once("open", () => {
     })
 
     io.on("connection", async (socket) => {
-        socket.on("update-chat-list", async (user) => {
+        socket.on("update-chat-list", async (user, friend, request) => {
             try {
                 let chatsData = await ChatController.findAllChatsOfAUser(user);
                 if (chatsData) {
-                    socket.emit("friend-chats-load", { chatsData })
+                    if (request === null) {
+                        socket.emit("friend-chats-load", { chatsData, user, friend, request })
+                    } else {
+                        socket.emit("friend-chats-load", { chatsData, user, friend, request })
+                    }
                 } else return null;
             } catch (err: any) {
                 console.error(err);
