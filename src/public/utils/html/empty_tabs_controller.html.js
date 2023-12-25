@@ -1,9 +1,7 @@
-setTimeout( async () => {
+export function friendListTabRefresh() {
   const listTab = document.getElementById("list-tab");
-  const chatTab = document.getElementById("chat_friend_list");
   const friendListTab = document.getElementById("friend_list_tab");
   const friendListLayout = document.getElementById("friend_list_layout");
-  const notificationsTab = document.getElementById("notifications_tab");
   friendListLayout.classList.add(
     "d-flex",
     "flex-column",
@@ -21,7 +19,10 @@ setTimeout( async () => {
       "Your friend list is currently empty, add a friend by clicking on the button below";
     listTab.append(p);
   }
+}
 
+export function chatTabRefresh() {
+  const chatTab = document.getElementById("chat_list_group");
   chatTab.classList.add(
     "d-flex",
     "flex-column",
@@ -36,20 +37,21 @@ setTimeout( async () => {
       "There are currently no messages in your inbox, if you want to start a chat, go to Friends tab and select a friend to start chatting";
     chatTab.append(p);
   }
+}
 
+export function notificationsTabRefresh() {
+  const notificationsTab = document.getElementById("notifications_tab");
   notificationsTab.classList.add(
     "d-flex",
     "flex-column",
-    "justify-content-center",
-    "px-5",
     notificationsTab.children.length <= 1
   );
-  if (notificationsTab.children.length <= 0) {
+  if (notificationsTab.children.length <= 2) {
     let p = document.createElement("p");
     p.setAttribute("id", "notification_info");
-    p.classList.add("text-center", "mx-5", "mt-3", "pb-3", "fs-6");
+    p.classList.add("text-center", "mx-5", "my-auto", "pb-3", "fs-6");
     p.innerText =
       "There are no notifications at the moment, you will be notified if anything arrives here!";
     notificationsTab.append(p);
   }
-}, 800);
+}

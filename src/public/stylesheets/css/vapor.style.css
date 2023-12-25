@@ -13265,7 +13265,6 @@ legend {
 }
 
 #friend_list_row {
-  /* background-color: #30115e; */
   border-bottom: 1px solid rgba(50, 251, 226, 0.4);
   max-width: 400px;
   min-width: 200px;
@@ -13275,7 +13274,6 @@ legend {
   border-bottom: none;
 }
 
-#avatar_preview,
 #user_avatar,
 #friend_list_row_avatar,
 #user_details_avatar,
@@ -13285,11 +13283,22 @@ legend {
   height: 40px;
 }
 
+#avatar_preview {
+  width: 80px;
+  height: 80px;
+}
+
+#settings_user_avatar {
+  width: 160px;
+  height: 160px;
+}
+
 #user_avatar,
 #friend_list_row_avatar,
 #user_details_avatar,
 #chat_user_avatar,
-#search_user_avatar {
+#search_user_avatar,
+#settings_user_avatar {
   border-radius: 50%;
   object-fit: cover;
 }
@@ -13299,6 +13308,7 @@ legend {
 #chat_friend_list,
 #chat_container,
 #notifications_tab,
+#settings_tab,
 .search-user-card {
   border: 1px solid var(--bs-pink);
   border-radius: 1em;
@@ -13308,7 +13318,8 @@ legend {
 #chat_friend_list,
 #chat_section,
 #notifications_tab,
-#chat_container {
+#chat_container,
+#settings_tab {
   border-color: var(--bs-cyan);
   min-height: 70vh;
   max-width: 24em;
@@ -13328,7 +13339,8 @@ legend {
   height: 45px;
 }
 
-#notifications_tab {
+#notifications_tab,
+#settings_tab {
   max-width: 35em;
 }
 
@@ -13365,7 +13377,9 @@ legend {
 }
 
 #password_popover,
-#show_password {
+#change_password_popover,
+#show_password,
+#show_change_password {
   cursor: pointer;
 }
 
@@ -13445,7 +13459,8 @@ legend {
 #chat_list_info,
 #modal_body,
 #notification_row,
-#notification_info {
+#notification_info,
+#tab_title {
   border-bottom: 1px solid var(--bs-cyan);
   border-radius: 1em;
 }
@@ -13459,6 +13474,18 @@ legend {
   border-radius: 1em;
 }
 
-#friend_list_row_avatar {
+#friend_list_row_avatar,
+#settings_user_avatar,
+#avatar_dropdown_menu {
   border: 1px solid var(--bs-cyan);
+}
+
+#settings_details_right_divider {
+  position: relative;
+}
+
+#settings_details_right_divider > .btn-group {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
 }

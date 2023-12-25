@@ -10,7 +10,10 @@
     >
       <section id="friend_list_section">
         <div class="d-flex justify-content-center">
-          <div id="friend_list_layout" class="bg-dark p-2">
+          <div id="friend_list_layout" class="bg-dark p-2 pt-0">
+            <div id="tab_title" class="p-1 mb-2 d-flex justify-content-center w-100">
+                <h5 class="m-1">Friends</h5>
+            </div>
             <div
               class="nav nav-pills mb-3 mb-md-0"
               id="v-pills-tab"
@@ -67,7 +70,7 @@
       aria-labelledby="pills-settings-tab"
       tabindex="0"
     >
-    <section id="settings_section"><%- include("settings_tab.ejs") %></section>
+      <section id="settings_section"><%- include("settings_tab.ejs") %></section>
     </div>
   </div>
   <div class="pills-tab">
@@ -151,6 +154,8 @@
   </div>
 </div>
 <%- include('../modals/search_users.ejs') %>
+<%- include('../modals/password_change.ejs') %>
+<%- include('../modals/account_removal.ejs') %>
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script
   type="module"

@@ -428,11 +428,9 @@ export namespace FriendshipController {
                 let friendUsernames = result.friendships
                     .filter((friend) => friend.status === 1)
                     .map((friend) => friend.username);
-                console.log(friendUsernames)
                 let friends = await localUserModel.find({
                     username: { $in: friendUsernames },
                 })
-                console.log(friends)
                 if (friends) {
                     let friendsArray = [];
                     for (let i = 0; i < friends.length; i++) {

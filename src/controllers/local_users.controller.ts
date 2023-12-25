@@ -78,6 +78,8 @@ export namespace LocalUsersController {
                     username: users[i].username,
                     avatar: users[i].avatar,
                     defaultAvatar: users[i].defaultAvatar,
+                    email: users[i].email,
+                    userID: users[i].userID,
                 })
             }
             return usersData.length > 0 ? usersData : null;

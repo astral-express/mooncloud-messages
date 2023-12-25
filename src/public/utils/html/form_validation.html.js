@@ -1,3 +1,5 @@
+import { avatarValidation } from "./avatar_validation.html.js";
+
 // Form validation
 let fields = document.querySelectorAll("#signup-modal input");
 let nextBtn = document.getElementById("nextBtn");
@@ -14,6 +16,10 @@ let usernameField = document.getElementById("username");
 let submitBtn = document.getElementById("submit_finish_btn");
 let usernameSuccessMsg = document.getElementById("username_success_msg");
 let usernameErrorMsg = document.getElementById("username_error_msg");
+let avatarPreview = document.getElementById("avatar_preview");
+let uploadedUserAvatar = document.getElementById("upload_user_avatar");
+let avatarErrorMessage = document.getElementById("avatar_error_message");
+let removeAvatarPreview = document.getElementById("remove_avatar_preview");
 
 const fieldsArray = Array.from(fields);
 
@@ -112,11 +118,13 @@ let usernameValidation = (username) => {
     return false;
   } else if (!isUsernameValidated === false) {
     usernameSuccessMsg.textContent = "";
-    usernameErrorMsg.textContent = "Username cannot contain uppercase characters";
+    usernameErrorMsg.textContent =
+      "Username cannot contain uppercase characters";
     return false;
   } else if (username.length <= 2) {
     usernameSuccessMsg.textContent = "";
-    usernameErrorMsg.textContent = "Username must be at least 3 characters long";
+    usernameErrorMsg.textContent =
+      "Username must be at least 3 characters long";
     return false;
   } else if (username.length > 16) {
     usernameSuccessMsg.textContent = "";
@@ -141,5 +149,29 @@ let checkIfItsAlphabeticalOrNumeralChar = (str) => {
     }
     if ((char >= 48 && char <= 57) || (char >= 97 && char <= 122)) continue;
     else return false;
+  }
+};
+
+uploadedUserAvatar.addEventListener("change", () => {
+  preloadAvatar(uploadedUserAvatar, avatarPreview);
+});
+
+removeAvatarPreview.addEventListener("click", () => {
+  avatarPreview.src = "assets/users/default/default_user_avatar.jpg";
+});
+
+// Function for pre-loading avatar on client side
+let preloadAvatar = (upload_user_avatar, avatar_preview) => {
+  let file = upload_user_avatar.files[0];
+  let reader = new FileReader();
+  let isValidated = avatarValidation(file);
+
+  if (isValidated === true) {
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      avatar_preview.src = reader.result;
+    };
+  } else {
+    avatarErrorMessage.textContent = isValidated;
   }
 };

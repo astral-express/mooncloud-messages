@@ -1,3 +1,11 @@
+import {
+  friendListTabRefresh,
+  chatTabRefresh,
+  notificationsTabRefresh,
+} from "./empty_tabs_controller.html.js";
+
+import { avatarValidation } from "./avatar_validation.html.js";
+
 // DOM Selectors
 const pillsNavbar = document.querySelectorAll("ul#pills-tab > li.nav-item");
 
@@ -47,6 +55,7 @@ socket.on("session", ({ sessionID, userID, username }) => {
   socket.emit("friend-list-refresh", username);
   socket.emit("update-chat-list", username, friend, request);
   socket.emit("check-friend-requests", username);
+  socket.emit("load-user-data", username);
 });
 
 socket.on("message-sent", ({ content, chatID, messageID }) => {
@@ -92,6 +101,10 @@ socket.on("is-friend-accepted", ({ result }) => {
 
 socket.on("open-initiated-chat", ({ requesterUsername, receiverUsername }) => {
   updateChatList(requesterUsername, receiverUsername);
+});
+
+socket.on("loaded-user-data", ({ result }) => {
+  loadUserSettingsData(result);
 });
 
 /**
@@ -483,7 +496,7 @@ function chatsListLoad(chatsData, user, friend, request) {
       if (!user.lastMessage) {
         if (user.avatar) {
           return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
-            <div class="d-flex justify-content-left align-items-center">
+            <div class="d-flex justify-content-left align-items-center ms-5">
               <div class="user-avatar">
                 <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
               </div>
@@ -495,7 +508,7 @@ function chatsListLoad(chatsData, user, friend, request) {
           </div>`;
         } else {
           return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
-            <div class="d-flex justify-content-left align-items-center">
+            <div class="d-flex justify-content-left align-items-center ms-5">
               <div class="user-avatar">
                 <img id="friend_list_row_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="default-user-row-avatar" />
               </div>
@@ -509,7 +522,7 @@ function chatsListLoad(chatsData, user, friend, request) {
       } else {
         if (user.avatar) {
           return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
-          <div class="d-flex justify-content-left align-items-center">
+          <div class="d-flex justify-content-left align-items-center ms-5">
             <div class="user-avatar">
               <img id="friend_list_row_avatar" class="me-1" src="assets/users/uploads/${user.avatar}" alt="user-row-avatar" />
             </div>
@@ -521,7 +534,7 @@ function chatsListLoad(chatsData, user, friend, request) {
         </div>`;
         } else {
           return `<div id="friend_list_row" class="list-group-item list-group-item-action" data-bs-toggle="list" href="#tab-chat-with-${user.name}" role="tab" chat="${user.chatID}" friend="${user.name}" loaded="0" aria-selected="false" tabindex="-1">
-          <div class="d-flex justify-content-left align-items-center">
+          <div class="d-flex justify-content-left align-items-center ms-5">
             <div class="user-avatar">
               <img id="friend_list_row_avatar" class="me-1" src="assets/users/default/default_user_avatar.jpg" alt="default-user-row-avatar" />
             </div>
@@ -601,6 +614,7 @@ function chatsListLoad(chatsData, user, friend, request) {
     openChatTab(user, friend);
   }
   messagesTabActive();
+  chatTabRefresh();
 }
 
 function unixConversion(date, type) {
@@ -789,6 +803,7 @@ function notificationsController(data) {
       .join(" ");
     notificationsButtonsController();
   }
+  notificationsTabRefresh();
 }
 
 function notificationsButtonsController() {
@@ -972,6 +987,7 @@ function updateFriendList(friends) {
       .join(" ");
     messageButtonsController();
   }
+  friendListTabRefresh();
 }
 
 function messageButtonsController() {
@@ -1023,6 +1039,216 @@ function openSelectedChat(friend) {
     `#chat_list_group div[href="#tab-chat-with-${friend}"]`
   );
   bootstrap.Tab.getInstance(friendListRow).show();
+}
+
+function avatarPreviewController() {
+  let settingsAvatarPreview = document.getElementById("settings_user_avatar");
+  let settingsUploadedUserAvatar = document.getElementById(
+    "settings_uploaded_user_avatar"
+  );
+  let settingsRemoveUploadedUserAvatar = document.getElementById(
+    "settings_remove_uploaded_user_avatar"
+  );
+  let settingsErrorMessage = document.getElementById(
+    "settings_avatar_error_message"
+  );
+
+  settingsUploadedUserAvatar.addEventListener("change", () => {
+    preloadAvatar(settingsUploadedUserAvatar, settingsAvatarPreview);
+  });
+
+  settingsRemoveUploadedUserAvatar.addEventListener("click", (e) => {
+    settingsAvatarPreview.src = "assets/users/default/default_user_avatar.jpg";
+  });
+
+  let preloadAvatar = (settingsUploadedUserAvatar, settingsAvatarPreview) => {
+    let file = settingsUploadedUserAvatar.files[0];
+    let reader = new FileReader();
+    let isValidated = avatarValidation(file);
+
+    if (isValidated === true) {
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        settingsAvatarPreview.src = reader.result;
+      };
+    } else {
+      settingsErrorMessage.textContent = isValidated;
+    }
+  };
+}
+
+// function changePasswordController() {
+//   const change_password_popover = document.getElementById(
+//     "change_password_popover"
+//   );
+//   window.addEventListener("DOMContentLoaded", () => {
+//     new bootstrap.Popover(change_password_popover);
+//   });
+// }
+
+function loadUserSettingsData(user) {
+  if (user) {
+    let settingsTab = document.getElementById("settings_tab");
+    settingsTab.innerHTML = user.map((user) => {
+      if (user.avatar) {
+        return `<div id="tab_title" class="p-1 d-flex justify-content-center">
+            <h5 class="m-1">Your profile</h5>
+        </div>
+        <div id="settings_details_wrapper" class="p-3 my-auto">
+        <div class="d-flex justify-content-center mb-2">
+            <span id="settings_avatar_error_message" class="text-warning text-center fs-6"></span>
+        </div>
+        <div id="settings_details_divider_top" class="d-flex">
+            <div id="settings_details_left_divider" class="left-divider">
+                <div id="settings-username">
+                    <div class="mb-3">
+                        <label for="settings-username-form-control" class="form-label">Username</label>
+                        <input type="email" class="form-control" id="settings-username-form-control"
+                            placeholder="${user.username}">
+                    </div>
+                </div>
+                <div class="settings-email">
+                    <div class="mb-3">
+                        <label for="settings-email-form-control" class="form-label">Email address</label>
+                        <input type="email" class="form-control" id="settings-email-form-control"
+                            placeholder="${user.email}">
+                    </div>
+                </div>
+            </div>
+            <div id="settings_details_right_divider"
+                class="right-divider d-flex justify-content-center align-items-center mx-auto ps-2">
+                <img id="settings_user_avatar" class="me-1" src="assets/users/uploads/${user.avatar}"
+                    alt="settings-user-avatar" />
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="fa-solid fa-pen me-1"></i>Edit
+                    </button>
+                    <ul id="avatar_dropdown_menu" class="dropdown-menu mt-1">
+                        <li>
+                            <input type="file" id="settings_uploaded_user_avatar" name="settings_uploaded_user_avatar"
+                                style="display: none;" class="m-0 p-0" />
+                            <label for="settings_uploaded_user_avatar"
+                                class="dropdown-item upload-user-avatar-label mt-1"><i
+                                    class="fa-solid fa-arrow-up me-1"></i>Upload avatar</label>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a id="settings_remove_uploaded_user_avatar" class="dropdown-item text-danger mb-1"
+                                href="#"><i class="fa-solid fa-trash me-1"></i>Remove
+                                avatar</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div id="settings_details_divider_bottom" class="d-flex">
+            <div id="settings_bio" class="w-100">
+                <div class="mb-3">
+                    <label for="settings-bio-form-control" class="form-label">Your bio</label>
+                    <textarea class="form-control" id="settings-bio-form-control" rows="3"
+                        placeholder="${user.description}"></textarea>
+                </div>
+            </div>
+        </div>
+        <div id="settings_details_password" class="d-flex flex-column">
+            <p class="m-0 mb-2">Password</p>
+            <div class="change-password-button">
+                <button type="button" data-bs-toggle="modal" data-bs-target="#password_change_modal" class="btn btn-primary"><i class="fa-solid fa-key me-1"></i>Change password</button>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex flex-column settings-bottom-wrapper mt-auto pb-2">
+        <hr class="mx-3">
+        <div class="d-flex align-items-center justify-content-between settings-update-profile px-3">
+            <button type="button" data-bs-toggle="modal" data-bs-target="#remove_profile_modal" class="btn btn-danger"><i class="fa-solid fa-trash me-1"></i>Remove profile</button>
+            <button type="button" class="btn btn-success"><i class="fa-solid fa-check me-1"></i>Update profile</button>
+        </div>
+    </div>`;
+      } else {
+        return `<div id="tab_title" class="p-1 d-flex justify-content-center">
+            <h5 class="m-1">Your profile</h5>
+        </div>
+        <div id="settings_details_wrapper" class="p-3 my-auto">
+        <div class="d-flex justify-content-center mb-2">
+            <span id="settings_avatar_error_message" class="text-warning text-center fs-6"></span>
+        </div>
+        <div id="settings_details_divider_top" class="d-flex">
+            <div id="settings_details_left_divider" class="left-divider">
+                <div id="settings-username">
+                    <div class="mb-3">
+                        <label for="settings-username-form-control" class="form-label">Username</label>
+                        <input type="email" class="form-control" id="settings-username-form-control"
+                            placeholder="${user.username}">
+                    </div>
+                </div>
+                <div class="settings-email">
+                    <div class="mb-3">
+                        <label for="settings-email-form-control" class="form-label">Email address</label>
+                        <input type="email" class="form-control" id="settings-email-form-control"
+                            placeholder="${user.email}">
+                    </div>
+                </div>
+            </div>
+            <div id="settings_details_right_divider"
+                class="right-divider d-flex justify-content-center align-items-center mx-auto ps-2">
+                <img id="settings_user_avatar" class="me-1" src="assets/users/default/class="me-1" src="assets/users/default/default_user_avatar.jpg"
+                    alt="settings-default-user-avatar" />
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="fa-solid fa-pen me-1"></i>Edit
+                    </button>
+                    <ul id="avatar_dropdown_menu" class="dropdown-menu mt-1">
+                        <li>
+                            <input type="file" id="settings_uploaded_user_avatar" name="settings_uploaded_user_avatar"
+                                style="display: none;" class="m-0 p-0" />
+                            <label for="settings_uploaded_user_avatar"
+                                class="dropdown-item upload-user-avatar-label mt-1"><i
+                                    class="fa-solid fa-arrow-up me-1"></i>Upload avatar</label>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a id="settings_remove_uploaded_user_avatar" class="dropdown-item text-danger mb-1"
+                                href="#"><i class="fa-solid fa-trash me-1"></i>Remove
+                                avatar</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div id="settings_details_divider_bottom" class="d-flex">
+            <div id="settings_bio" class="w-100">
+                <div class="mb-3">
+                    <label for="settings-bio-form-control" class="form-label">Your bio</label>
+                    <textarea class="form-control" id="settings-bio-form-control" rows="3"
+                        placeholder="${user.description}"></textarea>
+                </div>
+            </div>
+        </div>
+        <div id="settings_details_password" class="d-flex flex-column">
+            <p class="m-0 mb-2">Password</p>
+            <div class="change-password-button">
+                <button type="button" data-bs-toggle="modal" data-bs-target="#password_change_modal" class="btn btn-primary"><i class="fa-solid fa-key me-1"></i>Change password</button>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex flex-column settings-bottom-wrapper mt-auto pb-2">
+        <hr class="mx-3">
+        <div class="d-flex align-items-center justify-content-between settings-update-profile px-3">
+            <button type="button" data-bs-toggle="modal" data-bs-target="#remove_profile_modal" class="btn btn-danger"><i class="fa-solid fa-trash me-1"></i>Remove profile</button>
+            <button type="button" class="btn btn-success"><i class="fa-solid fa-check me-1"></i>Update profile</button>
+        </div>
+    </div>`;
+      }
+    });
+    avatarPreviewController();
+    changePasswordController();
+  }
 }
 
 // EVENT LISTENERS

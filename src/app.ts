@@ -178,6 +178,20 @@ mongoose.connection.once("open", () => {
     })
 
     io.on("connection", (socket) => {
+        socket.on("load-user-data", async (user) => {
+            try {
+                let result = await LocalUsersController.getLocalUser(user);
+                if (result) {
+                    socket.emit("loaded-user-data", { result });
+                }
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
+    })
+
+    io.on("connection", (socket) => {
         socket.on("send-private-message", async (content, to, chatID) => {
             try {
                 let messageID = await ChatController.sendMessage(socket.data.username, content, chatID);
@@ -236,6 +250,7 @@ mongoose.connection.once("open", () => {
     io.on("connection", (socket) => {
         socket.on("check-friend-requests", async (user) => {
             try {
+                let pendingFriendRequests;
                 let result = await FriendshipController.findFriendships(user);
                 if (result) {
                     let multiQueryFriendships = [];
@@ -252,9 +267,9 @@ mongoose.connection.once("open", () => {
                                 multiQueryUsers.push(multiFriendshipData[i].requester);
                             }
                         }
-                        let pendingFriendRequests = await LocalUsersController.getLocalUser("", multiQueryUsers);
-                        socket.emit("pending-friend-requests", { pendingFriendRequests });
+                        pendingFriendRequests = await LocalUsersController.getLocalUser("", multiQueryUsers);
                     }
+                    socket.emit("pending-friend-requests", { pendingFriendRequests });
                 }
             } catch (err: any) {
                 console.error(err);
