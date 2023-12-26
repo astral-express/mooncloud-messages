@@ -13288,7 +13288,7 @@ legend {
   height: 80px;
 }
 
-#settings_user_avatar {
+#settings_avatar_form_control {
   width: 160px;
   height: 160px;
 }
@@ -13298,7 +13298,8 @@ legend {
 #user_details_avatar,
 #chat_user_avatar,
 #search_user_avatar,
-#settings_user_avatar {
+#settings_avatar_form_control,
+#avatar_preview {
   border-radius: 50%;
   object-fit: cover;
 }
@@ -13360,6 +13361,10 @@ legend {
 #user_details_username,
 .search-user-username {
   font-size: 1.3em;
+}
+
+#user_details {
+  width: 15em;
 }
 
 .search-user-username {
@@ -13475,12 +13480,13 @@ legend {
 }
 
 #friend_list_row_avatar,
-#settings_user_avatar,
+#settings_avatar_form_control,
 #avatar_dropdown_menu {
   border: 1px solid var(--bs-cyan);
 }
 
-#settings_details_right_divider {
+#settings_details_right_divider,
+#settings_bio_form_control {
   position: relative;
 }
 
@@ -13488,4 +13494,9 @@ legend {
   position: absolute;
   bottom: 0px;
   right: 0px;
+}
+
+#settings_username_notification,
+#settings_email_notification {
+    font-size: 0.8em;
 }

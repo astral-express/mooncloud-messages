@@ -20,7 +20,7 @@ import { Database } from "./database/mongodb.database";
 import mongoose from "mongoose";
 import flash from "express-flash";
 import methodOverride from "method-override";
-import "redis";
+// import "redis";
 import { Server } from "socket.io";
 import "socket.io-client";
 // import { RedisClient } from "./database/redis.database";
@@ -395,6 +395,22 @@ mongoose.connection.once("open", () => {
             }
         });
     });
+
+    io.on("connection", (socket) => {
+        socket.on("old-password-change-input", async (user, password, newPassword) => {
+            try {
+                let isChanged;
+                let result = await LocalUsersController.checkLocalUserPassword(user, password);
+                if (result === true) {
+                    isChanged = await LocalUsersController.changeLocalUserPassword(user, newPassword);
+                } else isChanged = false;
+                socket.emit("is-password-changed", { isChanged });
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
+    })
 
     server.listen(port, "0.0.0.0", () => logger.info("Server running on port: " + port));
     server.on("error", onError);

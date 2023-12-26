@@ -1,4 +1,5 @@
 import { localUserModel } from "../database/schemas/local_user.schema";
+import { Bcrypt } from "../public/utils/bcrypt.util";
 export namespace LocalUsersController {
     /**
      * @param username: string
@@ -80,6 +81,7 @@ export namespace LocalUsersController {
                     defaultAvatar: users[i].defaultAvatar,
                     email: users[i].email,
                     userID: users[i].userID,
+                    description: users[i].description,
                 })
             }
             return usersData.length > 0 ? usersData : null;
@@ -164,6 +166,55 @@ export namespace LocalUsersController {
             await localUserModel.deleteOne({ userID: userID });
         } catch (err: any) {
             return null;
+        }
+    }
+
+
+    /**
+     * @param user: string
+     * @param password: string
+     * @returns boolean
+     * 
+     * Function for checking passwords
+     */
+    export async function checkLocalUserPassword(user: string, password: string): Promise<boolean | null | undefined> {
+        try {
+            let result = await localUserModel.findOne({ username: user });
+            if (result) {
+                let isMatch = Bcrypt.comparePasswords(password, result.password);
+                return isMatch;
+            } return null;
+        } catch (err: any) {
+            console.error(err);
+            return undefined;
+        }
+    }
+
+    /**
+     * @param user: string
+     * @param newPassword: string
+     * @returns boolean
+     * 
+     * Hashes and updates new password
+     */
+    export async function changeLocalUserPassword(user: string, newPassword: string): Promise<boolean | null | undefined> {
+        try {
+            let newHashedPassword = Bcrypt.hashedPassword(newPassword);
+            let userQuery = {
+                username: user,
+            }
+            let newPasswordQuery = {
+                $set: {
+                    password: newHashedPassword,
+                }
+            }
+            let result = await localUserModel.updateOne(userQuery, newPasswordQuery)
+            if (result?.matchedCount === 1) {
+                return true;
+            } else return false;
+        } catch (err: any) {
+            console.error(err);
+            return undefined;
         }
     }
 }

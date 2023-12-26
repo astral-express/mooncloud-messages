@@ -4,6 +4,8 @@ import {
   notificationsTabRefresh,
 } from "./empty_tabs_controller.html.js";
 
+import { checkIfItsAlphabeticalOrNumeralChar } from "./char_checker.html.js";
+
 import { avatarValidation } from "./avatar_validation.html.js";
 
 // DOM Selectors
@@ -105,6 +107,10 @@ socket.on("open-initiated-chat", ({ requesterUsername, receiverUsername }) => {
 
 socket.on("loaded-user-data", ({ result }) => {
   loadUserSettingsData(result);
+});
+
+socket.on("is-password-changed", ({ isChanged }) => {
+  oldPasswordFeedback(isChanged);
 });
 
 /**
@@ -759,7 +765,7 @@ function notificationsController(data) {
                               <button
                                   accept-btn="${user.username}"
                                   type="button"
-                                  class="btn btn-success ms-1"
+                                  class="btn btn-light ms-1"
                               >
                               Accept
                               <i class="fa-solid fa-check"></i>
@@ -790,7 +796,7 @@ function notificationsController(data) {
                               <button
                                   accept-btn="${user.username}"
                                   type="button"
-                                  class="btn btn-success ms-1"
+                                  class="btn btn-light ms-1"
                               >
                               Accept
                               <i class="fa-solid fa-check"></i>
@@ -936,7 +942,7 @@ function updateFriendList(friends) {
                         <p class="m-0">${friend.username}</p>
                     </div>
                     <div class="user-details-description w-85 pb-3">
-                        <p class="m-0 small text-break text-center">Lorem ipsum dolor sit amet.</p>
+                        <p class="m-0 small text-break text-center">${friend.description}</p>
                     </div>
                     <div class="user-details-action">
                         <button
@@ -967,7 +973,7 @@ function updateFriendList(friends) {
                         <p class="m-0">${friend.username}</p>
                     </div>
                     <div class="user-details-description w-85 pb-3">
-                        <p class="m-0 small text-break text-center">Lorem ipsum dolor sit amet.</p>
+                        <p class="m-0 small text-break text-center">${friend.description}</p>
                     </div>
                     <div class="user-details-action">
                         <button
@@ -1042,7 +1048,9 @@ function openSelectedChat(friend) {
 }
 
 function avatarPreviewController() {
-  let settingsAvatarPreview = document.getElementById("settings_user_avatar");
+  let settingsAvatarPreview = document.getElementById(
+    "settings_avatar_form_control"
+  );
   let settingsUploadedUserAvatar = document.getElementById(
     "settings_uploaded_user_avatar"
   );
@@ -1077,15 +1085,6 @@ function avatarPreviewController() {
   };
 }
 
-// function changePasswordController() {
-//   const change_password_popover = document.getElementById(
-//     "change_password_popover"
-//   );
-//   window.addEventListener("DOMContentLoaded", () => {
-//     new bootstrap.Popover(change_password_popover);
-//   });
-// }
-
 function loadUserSettingsData(user) {
   if (user) {
     let settingsTab = document.getElementById("settings_tab");
@@ -1098,29 +1097,27 @@ function loadUserSettingsData(user) {
         <div class="d-flex justify-content-center mb-2">
             <span id="settings_avatar_error_message" class="text-warning text-center fs-6"></span>
         </div>
-        <div id="settings_details_divider_top" class="d-flex">
+        <div id="settings_details_divider_top" class="d-flex pb-3">
             <div id="settings_details_left_divider" class="left-divider">
                 <div id="settings-username">
-                    <div class="mb-3">
-                        <label for="settings-username-form-control" class="form-label">Username</label>
-                        <input type="email" class="form-control" id="settings-username-form-control"
-                            placeholder="${user.username}">
-                    </div>
+                    <label for="settings_username_form_control" class="form-label">Username</label>
+                    <input type="email" class="form-control" id="settings_username_form_control"
+                    placeholder="${user.username}">
                 </div>
+                <span id="settings_username_notification" class="text-warning ms-1 mb-3"></span>
                 <div class="settings-email">
-                    <div class="mb-3">
-                        <label for="settings-email-form-control" class="form-label">Email address</label>
-                        <input type="email" class="form-control" id="settings-email-form-control"
-                            placeholder="${user.email}">
-                    </div>
+                    <label for="settings_email_form_control" class="form-label">Email address</label>
+                    <input type="email" class="form-control" id="settings_email_form_control"
+                    placeholder="${user.email}">
                 </div>
+                <span id="settings_email_notification" class="text-warning ms-1"></span>
             </div>
             <div id="settings_details_right_divider"
                 class="right-divider d-flex justify-content-center align-items-center mx-auto ps-2">
-                <img id="settings_user_avatar" class="me-1" src="assets/users/uploads/${user.avatar}"
+                <img id="settings_avatar_form_control" class="me-1" src="assets/users/uploads/${user.avatar}"
                     alt="settings-user-avatar" />
                 <div class="btn-group">
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
+                    <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown"
                         aria-expanded="false">
                         <i class="fa-solid fa-pen me-1"></i>Edit
                     </button>
@@ -1146,17 +1143,19 @@ function loadUserSettingsData(user) {
         </div>
         <div id="settings_details_divider_bottom" class="d-flex">
             <div id="settings_bio" class="w-100">
-                <div class="mb-3">
-                    <label for="settings-bio-form-control" class="form-label">Your bio</label>
-                    <textarea class="form-control" id="settings-bio-form-control" rows="3"
-                        placeholder="${user.description}"></textarea>
-                </div>
+                <label for="settings_bio_form_control" class="form-label">Your bio</label>
+                <textarea class="form-control" id="settings_bio_form_control" rows="3"
+                placeholder="${user.description}"></textarea>
             </div>
+        </div>
+        <div class="d-flex justify-content-between mb-3">
+            <span id="textarea_max_char_warning" class="text-danger"></span>
+            <span id="textarea_num_counter" class="text-secondary">0/160</span>
         </div>
         <div id="settings_details_password" class="d-flex flex-column">
             <p class="m-0 mb-2">Password</p>
             <div class="change-password-button">
-                <button type="button" data-bs-toggle="modal" data-bs-target="#password_change_modal" class="btn btn-primary"><i class="fa-solid fa-key me-1"></i>Change password</button>
+                <button type="button" data-bs-toggle="modal" data-bs-target="#password_change_modal" class="btn btn-secondary"><i class="fa-solid fa-key me-1"></i>Change password</button>
             </div>
         </div>
     </div>
@@ -1164,7 +1163,7 @@ function loadUserSettingsData(user) {
         <hr class="mx-3">
         <div class="d-flex align-items-center justify-content-between settings-update-profile px-3">
             <button type="button" data-bs-toggle="modal" data-bs-target="#remove_profile_modal" class="btn btn-danger"><i class="fa-solid fa-trash me-1"></i>Remove profile</button>
-            <button type="button" class="btn btn-success"><i class="fa-solid fa-check me-1"></i>Update profile</button>
+            <button id="settings_update_profile" type="button" class="btn btn-secondary"><i class="fa-solid fa-check me-1"></i>Update profile</button>
         </div>
     </div>`;
       } else {
@@ -1175,29 +1174,27 @@ function loadUserSettingsData(user) {
         <div class="d-flex justify-content-center mb-2">
             <span id="settings_avatar_error_message" class="text-warning text-center fs-6"></span>
         </div>
-        <div id="settings_details_divider_top" class="d-flex">
+        <div id="settings_details_divider_top" class="d-flex pb-3">
             <div id="settings_details_left_divider" class="left-divider">
                 <div id="settings-username">
-                    <div class="mb-3">
-                        <label for="settings-username-form-control" class="form-label">Username</label>
-                        <input type="email" class="form-control" id="settings-username-form-control"
-                            placeholder="${user.username}">
-                    </div>
+                    <label for="settings_username_form_control" class="form-label">Username</label>
+                    <input type="email" class="form-control" id="settings_username_form_control"
+                    placeholder="${user.username}">
                 </div>
+                <span id="settings_username_notification" class="text-warning mb-3 ms-1"></span>
                 <div class="settings-email">
-                    <div class="mb-3">
-                        <label for="settings-email-form-control" class="form-label">Email address</label>
-                        <input type="email" class="form-control" id="settings-email-form-control"
-                            placeholder="${user.email}">
-                    </div>
+                    <label for="settings_email_form_control" class="form-label">Email address</label>
+                    <input type="email" class="form-control" id="settings_email_form_control"
+                    placeholder="${user.email}">
                 </div>
+                <span id="settings_email_notification" class="text-warning ms-1"></span>
             </div>
             <div id="settings_details_right_divider"
                 class="right-divider d-flex justify-content-center align-items-center mx-auto ps-2">
-                <img id="settings_user_avatar" class="me-1" src="assets/users/default/class="me-1" src="assets/users/default/default_user_avatar.jpg"
+                <img id="settings_avatar_form_control" class="me-1" src="assets/users/default/class="me-1" src="assets/users/default/default_user_avatar.jpg"
                     alt="settings-default-user-avatar" />
                 <div class="btn-group">
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
+                    <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown"
                         aria-expanded="false">
                         <i class="fa-solid fa-pen me-1"></i>Edit
                     </button>
@@ -1223,17 +1220,19 @@ function loadUserSettingsData(user) {
         </div>
         <div id="settings_details_divider_bottom" class="d-flex">
             <div id="settings_bio" class="w-100">
-                <div class="mb-3">
-                    <label for="settings-bio-form-control" class="form-label">Your bio</label>
-                    <textarea class="form-control" id="settings-bio-form-control" rows="3"
-                        placeholder="${user.description}"></textarea>
-                </div>
+                <label for="settings_bio_form_control" class="form-label">Your bio</label>
+                <textarea class="form-control" id="settings_bio_form_control" rows="3"
+                placeholder="${user.description}"></textarea>
             </div>
+        </div>
+        <div class="d-flex justify-content-end mb-3">
+            <span id="textarea_max_char_warning" class="text-danger"></span>
+            <span id="textarea_num_counter" class="text-secondary">0/160</span>
         </div>
         <div id="settings_details_password" class="d-flex flex-column">
             <p class="m-0 mb-2">Password</p>
             <div class="change-password-button">
-                <button type="button" data-bs-toggle="modal" data-bs-target="#password_change_modal" class="btn btn-primary"><i class="fa-solid fa-key me-1"></i>Change password</button>
+                <button type="button" data-bs-toggle="modal" data-bs-target="#password_change_modal" class="btn btn-secondary"><i class="fa-solid fa-key me-1"></i>Change password</button>
             </div>
         </div>
     </div>
@@ -1241,14 +1240,265 @@ function loadUserSettingsData(user) {
         <hr class="mx-3">
         <div class="d-flex align-items-center justify-content-between settings-update-profile px-3">
             <button type="button" data-bs-toggle="modal" data-bs-target="#remove_profile_modal" class="btn btn-danger"><i class="fa-solid fa-trash me-1"></i>Remove profile</button>
-            <button type="button" class="btn btn-success"><i class="fa-solid fa-check me-1"></i>Update profile</button>
+            <button id="settings_update_profile" type="button" class="btn btn-secondary"><i class="fa-solid fa-check me-1"></i>Update profile</button>
         </div>
     </div>`;
       }
     });
     avatarPreviewController();
+    userSettingsController();
     changePasswordController();
   }
+}
+
+function userSettingsController() {
+  const usernameInput = document.getElementById(
+    "settings_username_form_control"
+  );
+  const emailInput = document.getElementById("settings_email_form_control");
+  const bioInput = document.getElementById("settings_bio_form_control");
+  const avatarUpload = document.getElementById("settings_avatar_form_control");
+  const textareaNumCounter = document.getElementById("textarea_num_counter");
+  const textareaMaxCharWarning = document.getElementById(
+    "textarea_max_char_warning"
+  );
+  const updateProfileBtn = document.getElementById("settings_update_profile");
+  const emailFeedback = document.getElementById("settings_email_notification");
+
+  bioInput.addEventListener("keyup", () => {
+    let bioInputCharacters = bioInput.value.length;
+    textareaNumCounter.textContent = bioInputCharacters + "/160";
+    if (bioInputCharacters > 160) {
+      textareaNumCounter.classList.add("text-danger");
+      textareaMaxCharWarning.textContent =
+        "You can write maximum 160 characters in your bio!";
+      updateProfileBtn.disabled = true;
+    } else {
+      textareaNumCounter.classList.remove("text-danger");
+      textareaMaxCharWarning.textContent = "";
+      updateProfileBtn.disabled = false;
+    }
+  });
+
+  emailInput.addEventListener("keyup", () => {
+    let isEmailValidated = emailValidation(emailInput.value);
+    if (isEmailValidated === false) {
+      emailFeedback.textContent = "This email address is not valid";
+      updateProfileBtn.disabled = true;
+    }
+    if (emailInput.value.length <= 0) {
+      emailFeedback.textContent = "";
+      updateProfileBtn.disabled = false;
+    }
+  });
+
+  const usernameNotification = document.getElementById(
+    "settings_username_notification"
+  );
+  usernameInput.addEventListener("keyup", () => {
+    let filteredUsername = usernameInput.value.trim().toLowerCase();
+    let isUsernameValidated = usernameValidation(filteredUsername);
+    if (filteredUsername.length <= 0) {
+      usernameNotification.textContent = "";
+    }
+    if (isUsernameValidated === true) {
+      updateProfileBtn.disabled = false;
+    }
+  });
+}
+
+function emailValidation(email) {
+  if (email.search(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/) < 0) {
+    return false;
+  } else return true;
+}
+
+function usernameValidation(username) {
+  const usernameNotification = document.getElementById(
+    "settings_username_notification"
+  );
+  let isUsernameValidated = checkIfItsAlphabeticalOrNumeralChar(username);
+  if (isUsernameValidated === null) {
+    usernameNotification.textContent = "Cannot contain white space characters";
+  }
+  if (isUsernameValidated === false) {
+    usernameNotification.textContent = "Cannot contain special characters";
+  } else if (!isUsernameValidated === false) {
+    usernameNotification.textContent = "Cannot contain uppercase characters";
+  } else if (username.length <= 2) {
+    usernameNotification.textContent = "Must be at least 3 characters";
+  } else if (username.length > 16) {
+    usernameNotification.textContent = "Maximum of 16 characters";
+  } else {
+    usernameNotification.textContent = "";
+    return true;
+  }
+}
+
+function changePasswordController() {
+  let passwordFields = document.querySelectorAll(
+    "#password_change_fields input"
+  );
+  let fieldsArray = Array.from(passwordFields);
+  let oldPasswordInput = document.getElementById("old_password");
+  let newPasswordInput = document.getElementById("new_password");
+  let repeatNewPasswordInput = document.getElementById("confirm_new_password");
+  let newPasswordToggler = document.getElementById(
+    "settings_change_password_toggler"
+  );
+  let oldPasswordToggler = document.getElementById(
+    "settings_change_old_password_toggler"
+  );
+  let updatePasswordBtn = document.getElementById("update_password_btn");
+  updatePasswordBtn.disabled = true;
+
+  const toggleNewPasswordVisibility = () => {
+    if (newPasswordInput.type == "password") {
+      newPasswordInput.setAttribute("type", "text");
+      repeatNewPasswordInput.setAttribute("type", "text");
+      newPasswordToggler.classList.remove("fa-eye");
+      newPasswordToggler.classList.add("fa-eye-slash");
+    } else {
+      newPasswordToggler.classList.remove("fa-eye-slash");
+      newPasswordToggler.classList.add("fa-eye");
+      newPasswordInput.setAttribute("type", "password");
+      repeatNewPasswordInput.setAttribute("type", "password");
+    }
+  };
+
+  const toggleOldPasswordVisibility = () => {
+    if (oldPasswordInput.type == "password") {
+      oldPasswordInput.setAttribute("type", "text");
+      oldPasswordToggler.classList.remove("fa-eye");
+      oldPasswordToggler.classList.add("fa-eye-slash");
+    } else {
+      oldPasswordToggler.classList.remove("fa-eye-slash");
+      oldPasswordToggler.classList.add("fa-eye");
+      oldPasswordInput.setAttribute("type", "password");
+    }
+  };
+
+  newPasswordToggler.addEventListener("click", toggleNewPasswordVisibility);
+  oldPasswordToggler.addEventListener("click", toggleOldPasswordVisibility);
+
+  let password_popover = document.getElementById("change_password_popover");
+  new bootstrap.Popover(password_popover);
+
+  let newPasswordSpanInvalidFeedback = document.getElementById(
+    "new_password_invalid_feedback"
+  );
+  let confirmNewPasswordSpanInvalidFeedback = document.getElementById(
+    "confirm_new_password_invalid_feedback"
+  );
+
+  for (let i = 0; i < fieldsArray.length; i++) {
+    fieldsArray[i].addEventListener("keyup", () => {
+      let newPasswordField = fieldsArray[1].value.trim();
+      let repeatNewPasswordField = fieldsArray[2].value.trim();
+      let isPasswordChangeValidated = passwordValidation(
+        newPasswordField,
+        repeatNewPasswordField,
+        newPasswordSpanInvalidFeedback,
+        confirmNewPasswordSpanInvalidFeedback
+      );
+      if (isPasswordChangeValidated === true) {
+        updatePasswordBtn.disabled = false;
+      } else {
+        updatePasswordBtn.disabled = true;
+      }
+    });
+  }
+
+  updatePasswordBtn.addEventListener("click", () => {
+    let oldPasswordValue = oldPasswordInput.value;
+    let newPasswordValue = newPasswordInput.value;
+    updatePasswordBtn.disabled = true;
+    socket.emit(
+      "old-password-change-input",
+      socket.username,
+      oldPasswordValue,
+      newPasswordValue
+    );
+    inputCoolDown();
+  });
+
+  function inputCoolDown() {
+    setTimeout(() => {
+      updatePasswordBtn.disabled = false;
+    }, 2000);
+  }
+
+  let closeModalButtons = document.querySelectorAll(
+    "[close-password-change-modal]"
+  );
+  for (let i = 0; i < closeModalButtons.length; i++) {
+    closeModalButtons[i].addEventListener("click", () => {
+      oldPasswordInput.value = "";
+      newPasswordInput.value = "";
+      repeatNewPasswordInput.value = "";
+    });
+  }
+}
+
+function passwordValidation(
+  password,
+  confirm_password,
+  passwordElem,
+  confirmPasswordElem
+) {
+  let errors = [];
+
+  if (password.search(/(?=.*[a-z])/i) < 0) {
+    errors.push("Your password must contain at least one letter");
+  }
+  if (password.search(/(?=.*[0-9])/) < 0) {
+    errors.push("Your password must contain at least one digit");
+  }
+  if (password.search(/(?=.*[A-Z])/) < 0) {
+    errors.push("Your password must contain at least one uppercase letter");
+  }
+  if (password.search(/(?=.*[!@#$%^&*])/) < 0) {
+    errors.push("Your password must contain at least one special character");
+  }
+  if (password.length < 6) {
+    errors.push("Your password must be at least 6 characters long");
+  }
+  if (errors.length > 0) {
+    passwordElem.textContent = errors[0];
+    return false;
+  }
+  if (errors.length === 0) {
+    passwordElem.textContent = "";
+    if (password !== confirm_password) {
+      confirmPasswordElem.textContent = "Your passwords do not match!";
+      return false;
+    } else {
+      confirmPasswordElem.textContent = "";
+      return true;
+    }
+  }
+}
+
+function oldPasswordFeedback(feedback) {
+  let oldPasswordInput = document.getElementById("old_password");
+  let oldPasswordSpanInvalidFeedback = document.getElementById(
+    "old_password_invalid_feedback"
+  );
+  let successFeedback = document.getElementById(
+    "settings_password_change_success"
+  );
+  if (feedback === false) {
+    successFeedback.style.display = "none";
+    oldPasswordSpanInvalidFeedback.textContent =
+      "Wrong password, please try again";
+  } else {
+    successFeedback.textContent = "Password has been successfully changed!";
+    successFeedback.style.display = "block";
+    oldPasswordSpanInvalidFeedback.textContent = "";
+  }
+  oldPasswordInput.addEventListener("change", () => {
+    oldPasswordSpanInvalidFeedback.textContent = "";
+  });
 }
 
 // EVENT LISTENERS

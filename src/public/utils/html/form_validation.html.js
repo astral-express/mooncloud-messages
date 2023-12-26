@@ -1,4 +1,5 @@
 import { avatarValidation } from "./avatar_validation.html.js";
+import { checkIfItsAlphabeticalOrNumeralChar } from "./char_checker.html.js";
 
 // Form validation
 let fields = document.querySelectorAll("#signup-modal input");
@@ -16,10 +17,6 @@ let usernameField = document.getElementById("username");
 let submitBtn = document.getElementById("submit_finish_btn");
 let usernameSuccessMsg = document.getElementById("username_success_msg");
 let usernameErrorMsg = document.getElementById("username_error_msg");
-let avatarPreview = document.getElementById("avatar_preview");
-let uploadedUserAvatar = document.getElementById("upload_user_avatar");
-let avatarErrorMessage = document.getElementById("avatar_error_message");
-let removeAvatarPreview = document.getElementById("remove_avatar_preview");
 
 const fieldsArray = Array.from(fields);
 
@@ -45,7 +42,7 @@ for (let i = 0; i < fieldsArray.length; i++) {
 // Email validation
 let emailValidation = (email) => {
   if (email.search(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/) < 0) {
-    emailErrorMsg.textContent = "Your email address is not valid";
+    emailErrorMsg.textContent = "This email address is not valid";
     return false;
   } else {
     emailErrorMsg.textContent = "";
@@ -137,20 +134,11 @@ let usernameValidation = (username) => {
   }
 };
 
-// Checks if string is within the range of letters and numbers in ascii table
-let checkIfItsAlphabeticalOrNumeralChar = (str) => {
-  for (let i = 0; i < str.length; i++) {
-    let char = str[i].charCodeAt(0);
-    if (char >= 0 && char <= 32) {
-      return null;
-    }
-    if (char >= 65 && char <= 90) {
-      return true;
-    }
-    if ((char >= 48 && char <= 57) || (char >= 97 && char <= 122)) continue;
-    else return false;
-  }
-};
+// Function for pre-loading avatar on client side
+let avatarPreview = document.getElementById("avatar_preview");
+let uploadedUserAvatar = document.getElementById("upload_user_avatar");
+let avatarErrorMessage = document.getElementById("avatar_error_message");
+let removeAvatarPreview = document.getElementById("remove_avatar_preview");
 
 uploadedUserAvatar.addEventListener("change", () => {
   preloadAvatar(uploadedUserAvatar, avatarPreview);
@@ -160,7 +148,6 @@ removeAvatarPreview.addEventListener("click", () => {
   avatarPreview.src = "assets/users/default/default_user_avatar.jpg";
 });
 
-// Function for pre-loading avatar on client side
 let preloadAvatar = (upload_user_avatar, avatar_preview) => {
   let file = upload_user_avatar.files[0];
   let reader = new FileReader();
@@ -175,3 +162,29 @@ let preloadAvatar = (upload_user_avatar, avatar_preview) => {
     avatarErrorMessage.textContent = isValidated;
   }
 };
+
+// Toggles password visibility on button click
+let password = document.getElementById("password");
+let confirm_password = document.getElementById("confirm_password");
+let toggler = document.getElementById("show_password");
+const togglePasswordVisibility = () => {
+  if (password.type == "password") {
+    password.setAttribute("type", "text");
+    confirm_password.setAttribute("type", "text");
+    toggler.classList.remove("fa-eye");
+    toggler.classList.add("fa-eye-slash");
+  } else {
+    toggler.classList.remove("fa-eye-slash");
+    toggler.classList.add("fa-eye");
+    password.setAttribute("type", "password");
+    confirm_password.setAttribute("type", "password");
+  }
+};
+
+toggler.addEventListener("click", togglePasswordVisibility);
+
+// Shop bootstrap popover on click
+const password_popover = document.getElementById("password_popover");
+window.addEventListener("DOMContentLoaded", () => {
+  new bootstrap.Popover(password_popover);
+});

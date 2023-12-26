@@ -440,6 +440,7 @@ export namespace FriendshipController {
                             avatar: friends[i].avatar,
                             email: friends[i].email,
                             status: friends[i].status,
+                            description: friends[i].description,
                         })
                     }
                     return friendsArray.length > 0 ? friendsArray : null;

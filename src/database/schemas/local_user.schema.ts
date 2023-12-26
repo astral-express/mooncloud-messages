@@ -7,6 +7,7 @@ interface LocalUser {
     password: String;
     defaultAvatar: String;
     avatar: String;
+    description: String;
     friendships: [friendshipType];
     status: String;
     created_at?: Date;
@@ -58,6 +59,10 @@ const userSchema = new mongoose.Schema<LocalUser>({
     avatar: {
         type: String,
         default: null,
+    },
+    description: {
+        type: String,
+        default: "No bio",
     },
     friendships: [friendshipSchema],
     status: {
