@@ -1340,6 +1340,7 @@ function userSettingsController() {
     let avatarValue;
     if (avatarUpload.files[0] !== undefined) {
       avatarValue = avatarUpload.files[0].name;
+      
     } else {
       avatarValue = currentAvatar.src;
     }
