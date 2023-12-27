@@ -353,7 +353,11 @@ export namespace LocalUsersController {
         try {
             let userResult = await localUserModel.findOne({
                 username: username,
-            })
+            }) 
+            await localUserModel.updateOne(
+                { 'username': username },
+                { $set: { 'friendships.$[].status': 3 } }
+            )
             if (userResult) {
                 for (let i = 0; i < userResult.friendships.length; i++) {
                     let friendUsername = userResult.friendships[i].username;
@@ -361,42 +365,43 @@ export namespace LocalUsersController {
                         username: friendUsername,
                     })
                     if (friend) {
-                        // for (let i = 0; i < friend.friendships.length; i++) {
-                        //     if (userResult.username === username) {
-                        //         await localUserModel.deleteOne(
-                        //             { 'friendships.username': username },
-                        //         )
+                        for (let i = 0; i < friend.friendships.length; i++) {
+                            if (userResult.username === username) {
+                                await localUserModel.updateOne(
+                                    { 'friendships.username': username },
+                                    { $set: { 'friendships.$.status': 3 } }
+                                )
 
-                        //         let friendshipQuery = {
-                        //             $or: [
-                        //                 { "requester.username": username },
-                        //                 { "receiver.username": username }
-                        //             ]
-                        //         };
+                                let friendshipQuery = {
+                                    $or: [
+                                        { "requester.username": username },
+                                        { "receiver.username": username }
+                                    ]
+                                };
 
-                        //         let friendshipField = friendshipQuery["$or"][i]["requester.username"] === username
-                        //             ? "requester.username"
-                        //             : "receiver.username";
+                                let friendshipUpdate = {
+                                    $set: {
+                                        status: 3
+                                    }
+                                };
 
-                        //         let friendshipUpdate = {
-                        //             $set: {
-                        //                 [friendshipField]: username
-                        //             }
-                        //         };
+                                await friendshipModel.updateMany(friendshipQuery, friendshipUpdate)
 
-                        //         await friendshipModel.deleteMany(friendshipQuery, friendshipUpdate)
+                                let chatQuery = {
+                                    "members.username": username,
+                                };
 
-                        //         let chatQuery = {
-                        //             "members.username": username,
-                        //         };
-
-                        //         await chatModel.deleteMany(chatQuery);
-                        //     }
-                        // }
+                                await chatModel.deleteMany(chatQuery);
+                            }
+                        }
                     }
                 }
+                let deleteUserQuery = { username: username }
+                let setDeleteStatus = {
+                    $set: { status: "deleted" }
+                }
+                await localUserModel.updateOne(deleteUserQuery, setDeleteStatus);
             }
-            await localUserModel.deleteOne({ username: username });
             return true;
         } catch (err: any) {
             console.error(err);

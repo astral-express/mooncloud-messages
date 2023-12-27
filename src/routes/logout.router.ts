@@ -11,10 +11,12 @@ router.delete("/logout", (req, res, next) => {
     });
 });
 
-// router.post("/logout?_method=DELETE", checkIsNotAuthenticated, (req, res) => {
-//     if (res.headersSent !== true) {
-//         res.setHeader("Content-Type", "text/html; charset=UTF-8");
-//     }
-// })
+router.delete("/delete_account", (req, res, next) => {
+    req.session.authenticated = false;
+    req.logOut((err) => {
+        if (err) return next(err);
+        res.redirect("/");
+    });
+})
 
 export const logoutRouter = router;

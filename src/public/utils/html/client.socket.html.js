@@ -35,10 +35,6 @@ function created() {
 
 created();
 
-function destroyed() {
-  socket.off("connect_error");
-}
-
 // Sockets
 socket.on("connect_error", (err) => {
   if (err.message === "Invalid user") {
@@ -260,11 +256,13 @@ function messageNotificationBadgeTrigger(chatID) {
   for (let i = 0; i < chats.length; i++) {
     let ariaChatID = chats[i].getAttribute("chat");
     let selected = chatIdMap.get(chatID);
-    if (selected.active === false) {
-      if (ariaChatID === chatID) {
-        let placeholder = chats[i];
-        messageCounter++;
-        appendMessageNotificationBadgeOnFriendList(chatID, placeholder);
+    if (selected) {
+      if (selected.active === false) {
+        if (ariaChatID === chatID) {
+          let placeholder = chats[i];
+          messageCounter++;
+          appendMessageNotificationBadgeOnFriendList(chatID, placeholder);
+        }
       }
     }
   }
@@ -650,45 +648,49 @@ function unixConversion(date, type) {
 
 function onClickMessageDetail(chatID) {
   let selected = chatIdMap.get(chatID);
-  if (selected.active === true) {
-    const messages = document.querySelectorAll("div#message");
-    if (messages.length !== 0) {
-      for (let i = 0; i < messages.length; i++) {
-        messages[i].addEventListener("click", (e) => {
-          let seenMark = messages[i].childNodes[2];
-          if (seenMark) {
-            if (seenMark.style.display === "block") {
-              seenMark.style.display = "none";
-            } else {
-              seenMark.style.display = "block";
+  if (selected) {
+    if (selected.active === true) {
+      const messages = document.querySelectorAll("div#message");
+      if (messages.length !== 0) {
+        for (let i = 0; i < messages.length; i++) {
+          messages[i].addEventListener("click", (e) => {
+            let seenMark = messages[i].childNodes[2];
+            if (seenMark) {
+              if (seenMark.style.display === "block") {
+                seenMark.style.display = "none";
+              } else {
+                seenMark.style.display = "block";
+              }
             }
-          }
-        });
+          });
+        }
       }
     }
-  }
+  } else return;
 }
 
 function checkIfMessageWasRead(chatID) {
   let selected = chatIdMap.get(chatID);
-  if (selected.active === true) {
-    let messages = document.querySelectorAll("div#message");
-    if (messages.length !== 0) {
-      for (let i = 0; i < messages.length; i++) {
-        let messageText = messages[i].childNodes[1];
-        // let messageSeenMark = messages[i].childNodes[2].textContent;
-        let messageTextID = messageText.getAttribute("id");
-        if (messageTextID === "received_message") {
-          let isMessageRead = messageText.getAttribute("read_at");
-          if (isMessageRead !== "false") {
-            let result = unixConversion(isMessageRead, "seen");
-            sentMessageInfoMark(result);
-          } else {
-            let messageID = messageText.getAttribute("message_id");
-            let date = Math.floor(new Date().getTime() / 1000);
-            let result = unixConversion(date, "seen");
-            sentMessageInfoMark(result);
-            socket.emit("seen", chatID, messageID);
+  if (selected) {
+    if (selected.active === true) {
+      let messages = document.querySelectorAll("div#message");
+      if (messages.length !== 0) {
+        for (let i = 0; i < messages.length; i++) {
+          let messageText = messages[i].childNodes[1];
+          // let messageSeenMark = messages[i].childNodes[2].textContent;
+          let messageTextID = messageText.getAttribute("id");
+          if (messageTextID === "received_message") {
+            let isMessageRead = messageText.getAttribute("read_at");
+            if (isMessageRead !== "false") {
+              let result = unixConversion(isMessageRead, "seen");
+              sentMessageInfoMark(result);
+            } else {
+              let messageID = messageText.getAttribute("message_id");
+              let date = Math.floor(new Date().getTime() / 1000);
+              let result = unixConversion(date, "seen");
+              sentMessageInfoMark(result);
+              socket.emit("seen", chatID, messageID);
+            }
           }
         }
       }
@@ -1559,21 +1561,9 @@ function removeAccount() {
   const removeAccountButton = document.getElementById("remove_account_btn");
   removeAccountButton.addEventListener("click", (e) => {
     let approval = true;
-    localStorage.removeItem("sessionID");
-    deleteAllCookies();
     socket.emit("remove-account", approval, socket.username);
+    socket.off();
   });
-}
-
-function deleteAllCookies() {
-  const cookies = document.cookie.split(";");
-
-  for (let i = 0; i < cookies.length; i++) {
-    const cookie = cookies[i];
-    const eqPos = cookie.indexOf("=");
-    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
-  }
 }
 
 // EVENT LISTENERS
@@ -1601,11 +1591,13 @@ const messagesTabActive = () => {
       selectedChat = chatID;
       chatIdMap.forEach(isChatActive);
       let selected = chatIdMap.get(chatID);
-      if (selected.active === true) {
-        setTimeout(() => {
-          onClickMessageDetail(chatID);
-          checkIfMessageWasRead(chatID);
-        }, 10);
+      if (selected) {
+        if (selected.active === true) {
+          setTimeout(() => {
+            onClickMessageDetail(chatID);
+            checkIfMessageWasRead(chatID);
+          }, 10);
+        }
       }
       removeMessageNotificationBadgeFromFriendList(chatID);
     });

@@ -24,6 +24,15 @@ router.post("/login", async (req, res, next) => {
     const localUser = await localUserModel.findOne({
         $or: [{ email: email_or_username }, { username: email_or_username }],
     });
+    if (localUser) {
+        if (localUser.status === "deleted") {
+            req.flash(
+                "error_input",
+                "Couldn't find an account with this email or username!"
+            );
+            return res.redirect(301, "/login");
+        }
+    }
     if (!localUser) {
         req.flash(
             "error_input",
