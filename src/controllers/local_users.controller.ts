@@ -168,6 +168,7 @@ export namespace LocalUsersController {
      * Function for changing and updating user info
      */
     export async function updateLocalUserInfo(user: string, username: string, email: string, description: string, avatar: string | undefined): Promise<boolean | null | undefined> {
+        console.log(avatar)
         try {
             let filterQuery = { username: user };
 
@@ -187,10 +188,11 @@ export namespace LocalUsersController {
                 }
 
                 let result = await localUserModel.updateOne(filterQuery, updateQuery);
+                console.log(result)
                 if (result) {
                     console.log(`${result.matchedCount} document(s) matched the filter criteria.`);
                     console.log(`${result.modifiedCount} document(s) was/were updated.`);
-                }
+                } else return null;
             };
 
             if (username) {

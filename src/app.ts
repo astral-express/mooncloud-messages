@@ -418,22 +418,26 @@ mongoose.connection.once("open", () => {
 
     io.on("connection", (socket) => {
         socket.on("update-user-profile", async (user, newUsername, newEmail, newBio, newAvatar, newAvatarBase64Data) => {
+            let filteredOriginalAvatar;
+            let newAvatarName;
+            let filteredUserResultAvatarName;
+            let userResultAvatarName;
+            let defaultAvatarRegex = /.*\/default\/default_user_avatar.jpg/;
+            let newAvatarRegex = /(.*)uploads\/(.*)/;
+            let defaultAvatarMatch = newAvatar.match(defaultAvatarRegex);
+            let newAvatarMatch = newAvatar.match(newAvatarRegex);
+            if (newAvatar.indexOf("--") !== -1) {
+                filteredOriginalAvatar = newAvatar.split("--")[1];
+            } else {
+                filteredOriginalAvatar = newAvatar;
+            }
+            let date = new Date().getTime();
             try {
-                let filteredOriginalAvatar = newAvatar.split("--");
-                let newAvatarName;
-                let filteredUserResultAvatarName;
-                let userResultAvatarName;
-                let defaultAvatarRegex = /.*\/default\/default_user_avatar.jpg/;
-                let newAvatarRegex = /(.*)uploads\/(.*)/;
-                let defaultAvatarMatch = newAvatar.match(defaultAvatarRegex);
-                let newAvatarMatch = newAvatar.match(newAvatarRegex);
-                let date = new Date().getTime();
-
                 let userResult = await LocalUsersController.getLocalUser(user);
                 if (userResult) {
                     for (let i = 0; i < userResult.length; i++) {
                         userResultAvatarName = userResult[i].avatar.toString();
-                        filteredUserResultAvatarName = userResultAvatarName.split("--");
+                        filteredUserResultAvatarName = userResultAvatarName.split("--")[1];
                     }
                 }
                 if (defaultAvatarMatch) {
@@ -444,37 +448,36 @@ mongoose.connection.once("open", () => {
                 } else {
                     newAvatarName = date + "--" + newAvatar;
                 }
-                if (newAvatarBase64Data) {
-                    const avatarBuffer = Buffer.from(newAvatarBase64Data, 'base64');
-                    const filePath = path.join(__dirname, "./public/assets/users/uploads/");
-                    fs.writeFile(filePath + newAvatarName, avatarBuffer, (err) => {
-                        if (err) {
-                            console.error("Error saving the image:", err);
+                // if (newAvatarBase64Data) {
+                //     const avatarBuffer = Buffer.from(newAvatarBase64Data, 'base64');
+                //     const filePath = path.join(__dirname, "./public/assets/users/uploads/");
+                //     fs.writeFile(filePath + newAvatarName, avatarBuffer, (err) => {
+                //         if (err) {
+                //             console.error("Error saving the image:", err);
+                //         }
+                //     })
+                // }
+                console.log(filteredUserResultAvatarName, filteredOriginalAvatar)
+                if (filteredUserResultAvatarName === filteredOriginalAvatar) {
+                    let result = await LocalUsersController.updateLocalUserInfo(user, newUsername, newEmail, newBio, userResultAvatarName);
+                    if (result === true) {
+                        if (newUsername) {
+                            let updatedUser = await LocalUsersController.getLocalUser(newUsername)
+                            socket.emit("refresh-user-profile", { updatedUser })
+                        } else {
+                            let updatedUser = await LocalUsersController.getLocalUser(user)
+                            socket.emit("refresh-user-profile", { updatedUser })
                         }
-                    })
-                }
-                if (filteredUserResultAvatarName) {
-                    if (filteredUserResultAvatarName[1] === filteredOriginalAvatar[1]) {
-                        let result = await LocalUsersController.updateLocalUserInfo(user, newUsername, newEmail, newBio, userResultAvatarName);
-                        if (result === true) {
-                            if (newUsername) {
-                                let updatedUser = await LocalUsersController.getLocalUser(newUsername)
-                                socket.emit("refresh-user-profile", { updatedUser })
-                            } else {
-                                let updatedUser = await LocalUsersController.getLocalUser(user)
-                                socket.emit("refresh-user-profile", { updatedUser })
-                            }
-                        }
-                    } else {
-                        let result = await LocalUsersController.updateLocalUserInfo(user, newUsername, newEmail, newBio, newAvatarName);
-                        if (result === true) {
-                            if (newUsername) {
-                                let updatedUser = await LocalUsersController.getLocalUser(newUsername)
-                                socket.emit("refresh-user-profile", { updatedUser })
-                            } else {
-                                let updatedUser = await LocalUsersController.getLocalUser(user)
-                                socket.emit("refresh-user-profile", { updatedUser })
-                            }
+                    }
+                } else {
+                    let result = await LocalUsersController.updateLocalUserInfo(user, newUsername, newEmail, newBio, newAvatarName);
+                    if (result === true) {
+                        if (newUsername) {
+                            let updatedUser = await LocalUsersController.getLocalUser(newUsername)
+                            socket.emit("refresh-user-profile", { updatedUser })
+                        } else {
+                            let updatedUser = await LocalUsersController.getLocalUser(user)
+                            socket.emit("refresh-user-profile", { updatedUser })
                         }
                     }
                 }
