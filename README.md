@@ -1,5 +1,5 @@
 # Mooncloud Instant Messages Website
-Current live demo (work in progress): https://mooncloud-services.up.railway.app
+Hosted on: https://mooncloud-services.up.railway.app
 
 ## Personal project
 Written mainly in TypeScript, vanilla JavaScript and NodeJS as its (server) framework, with EJS template, CSS styling, Socket.io library for server-browser communications and MongoDB as database, is a project I’ve engaged to dive deeper into the JavaScript world. The reason for picking NodeJS instead of any other sophisticated JS-like framework is because I wanted to create a website app that’s written in vanilla JS / TS to understand it’s core functionality and workflow before getting my hands on other frameworks that wraps and covers all of the JS basics and functionalities underneath. As for the project’s theme, I was interested in how instant messaging (chatting) works and is transmitted, as well as adding / removing friends, getting notifications, user settings and other similar miscellaneous things similar to my previous PHP project.
@@ -14,3 +14,10 @@ Written mainly in TypeScript, vanilla JavaScript and NodeJS as its (server) fram
 - [socket.io] - library package
 - [MongoDB Atlas] - database
 - [Bootstrap] - css framework
+- [Bootswatch - Vapor theme] - css theme for bootstrap
+
+## Known bugs
+- when user adds another user and initiates a chat, the other user doesn't get a chat section popout, page needs to be manually refreshed
+- message notification counter doesn't work as intended
+- notifications info about empty list pops out when there are multiple requests after a user is accepted as a friend
+- removed users might still be disaplyed in friend list
