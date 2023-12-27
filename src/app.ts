@@ -1,5 +1,6 @@
 import "dotenv/config";
 import "ejs";
+import fs from "fs";
 import express, { Application, Request, Response, NextFunction } from "express";
 import path from "path";
 import cookieParser from "cookie-parser";
@@ -270,6 +271,9 @@ mongoose.connection.once("open", () => {
                         pendingFriendRequests = await LocalUsersController.getLocalUser("", multiQueryUsers);
                     }
                     socket.emit("pending-friend-requests", { pendingFriendRequests });
+                } else {
+                    pendingFriendRequests = null;
+                    socket.emit("pending-friend-requests", { pendingFriendRequests });
                 }
             } catch (err: any) {
                 console.error(err);
@@ -321,7 +325,7 @@ mongoose.connection.once("open", () => {
                     if (friends) {
                         socket.emit("friend-list-update", { friends });
                     } else {
-                        return null;
+                        socket.emit("friend-list-update", { friends });
                     }
                 } catch (err: any) {
                     console.error(err);
@@ -408,6 +412,83 @@ mongoose.connection.once("open", () => {
             } catch (err: any) {
                 console.error(err);
                 return undefined;
+            }
+        })
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("update-user-profile", async (user, newUsername, newEmail, newBio, newAvatar, newAvatarBase64Data) => {
+            try {
+                let filteredOriginalAvatar = newAvatar.split("--");
+                let newAvatarName;
+                let filteredUserResultAvatarName;
+                let userResultAvatarName;
+                let defaultAvatarRegex = /.*\/default\/default_user_avatar.jpg/;
+                let newAvatarRegex = /(.*)uploads\/(.*)/;
+                let defaultAvatarMatch = newAvatar.match(defaultAvatarRegex);
+                let newAvatarMatch = newAvatar.match(newAvatarRegex);
+                let date = new Date().getTime();
+
+                let userResult = await LocalUsersController.getLocalUser(user);
+                if (userResult) {
+                    for (let i = 0; i < userResult.length; i++) {
+                        userResultAvatarName = userResult[i].avatar.toString();
+                        filteredUserResultAvatarName = userResultAvatarName.split("--");
+                    }
+                }
+                if (defaultAvatarMatch) {
+                    newAvatarName = "default_user_avatar.jpg";
+                }
+                else if (newAvatarMatch) {
+                    newAvatarName = date + "--" + newAvatarMatch[2];
+                } else {
+                    newAvatarName = date + "--" + newAvatar;
+                }
+                if (newAvatarBase64Data) {
+                    const avatarBuffer = Buffer.from(newAvatarBase64Data, 'base64');
+                    const filePath = path.join(__dirname, "./public/assets/users/uploads/");
+                    fs.writeFile(filePath + newAvatarName, avatarBuffer, (err) => {
+                        if (err) {
+                            console.error("Error saving the image:", err);
+                        }
+                    })
+                }
+                if (filteredUserResultAvatarName) {
+                    if (filteredUserResultAvatarName[1] === filteredOriginalAvatar[1]) {
+                        let result = await LocalUsersController.updateLocalUserInfo(user, newUsername, newEmail, newBio, userResultAvatarName);
+                        if (result === true) {
+                            if (newUsername) {
+                                let updatedUser = await LocalUsersController.getLocalUser(newUsername)
+                                socket.emit("refresh-user-profile", { updatedUser })
+                            } else {
+                                let updatedUser = await LocalUsersController.getLocalUser(user)
+                                socket.emit("refresh-user-profile", { updatedUser })
+                            }
+                        }
+                    } else {
+                        let result = await LocalUsersController.updateLocalUserInfo(user, newUsername, newEmail, newBio, newAvatarName);
+                        if (result === true) {
+                            if (newUsername) {
+                                let updatedUser = await LocalUsersController.getLocalUser(newUsername)
+                                socket.emit("refresh-user-profile", { updatedUser })
+                            } else {
+                                let updatedUser = await LocalUsersController.getLocalUser(user)
+                                socket.emit("refresh-user-profile", { updatedUser })
+                            }
+                        }
+                    }
+                }
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("remove-account", async (approval, user) => {
+            if (approval === true) {
+                let result = await LocalUsersController.deleteLocalUser(user);
             }
         })
     })

@@ -3,6 +3,7 @@ import passport from "passport";
 import sanitizeHtml from "sanitize-html";
 import { localUserModel } from "../database/schemas/local_user.schema";
 import { Bcrypt } from "../public/utils/bcrypt.util";
+
 var router = Router();
 
 // Login

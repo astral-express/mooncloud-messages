@@ -13474,6 +13474,10 @@ legend {
   border-radius: 0.4em;
 }
 
+#notification_row:first-child {
+  margin-top: 1.5em;
+}
+
 #chat_header {
   background-color: var(--bs-focus-ring-color);
   border-radius: 1em;
@@ -13498,5 +13502,10 @@ legend {
 
 #settings_username_notification,
 #settings_email_notification {
-    font-size: 0.8em;
+  font-size: 0.8em;
+}
+
+#account_removal_wrapper {
+  border: 2px solid var(--bs-warning);
+  border-radius: 1em;
 }

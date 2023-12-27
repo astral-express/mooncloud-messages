@@ -19,10 +19,10 @@ export namespace ChatController {
                             $and:
                                 [
                                     {
-                                        "members.user": sender,
+                                        "members.username": sender,
                                     },
                                     {
-                                        "members.user": receiver,
+                                        "members.username": receiver,
                                     }
                                 ]
                         },
@@ -30,10 +30,10 @@ export namespace ChatController {
                             $and:
                                 [
                                     {
-                                        "members.user": receiver,
+                                        "members.username": receiver,
                                     },
                                     {
-                                        "members.user": sender,
+                                        "members.username": sender,
                                     }
                                 ]
                         }
@@ -58,7 +58,7 @@ export namespace ChatController {
     export async function findAllChatsOfAUser(username: string): Promise<any | null | undefined> {
         try {
             let chats = await chatModel.find({
-                "members.user": username,
+                "members.username": username,
             })
             if (chats) {
                 let chatsData = [];
@@ -108,13 +108,13 @@ export namespace ChatController {
                     time: new Date(),
                     members: [
                         {
-                            user: senderResult.username,
+                            username: senderResult.username,
                             avatar: senderResult.avatar,
                             email: senderResult.email,
                             status: senderResult.status,
                         },
                         {
-                            user: receiverResult.username,
+                            username: receiverResult.username,
                             avatar: receiverResult.avatar,
                             email: receiverResult.email,
                             status: receiverResult.status,
@@ -151,7 +151,7 @@ export namespace ChatController {
                         $push: {
                             messages: {
                                 message_id: id,
-                                user: sender,
+                                username: sender,
                                 message: message,
                                 dateSent: date,
                                 dateRead: null,

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { loginRouter } from "./login.router";
 import { localSignupRouter } from "./signup.router";
 import { logoutRouter } from "./logout.router";
+import { checkIsNotAuthenticated } from "../controllers/auth.controller";
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.get("/", (req, res) => {
 });
 
 /* GET home/login modal */
-router.get("/login", (req, res) => {
+router.get("/login", checkIsNotAuthenticated, (req, res) => {
     if (res.headersSent !== true) {
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
     }
@@ -36,7 +37,7 @@ router.get("/login", (req, res) => {
 });
 
 /* GET home/signup modal */
-router.get("/signup", (req, res) => {
+router.get("/signup", checkIsNotAuthenticated, (req, res) => {
     if (res.headersSent !== true) {
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
     }

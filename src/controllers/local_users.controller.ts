@@ -1,4 +1,6 @@
+import { friendshipModel } from "../database/schemas/friendship.schema";
 import { localUserModel } from "../database/schemas/local_user.schema";
+import { chatModel } from "../database/schemas/chat.schema";
 import { Bcrypt } from "../public/utils/bcrypt.util";
 export namespace LocalUsersController {
     /**
@@ -156,19 +158,251 @@ export namespace LocalUsersController {
     }
 
     /**
-     * @param userID: string
+     * @param user: string
+     * @param username: string
+     * @param email: string
+     * @param description: string
+     * @param avatar: string
      * @returns void
      * 
-     * Function for removing an user from db
+     * Function for changing and updating user info
      */
-    export async function deleteLocalUser(userID: string): Promise<void | null> {
+    export async function updateLocalUserInfo(user: string, username: string, email: string, description: string, avatar: string | undefined): Promise<boolean | null | undefined> {
         try {
-            await localUserModel.deleteOne({ userID: userID });
-        } catch (err: any) {
+            let filterQuery = { username: user };
+
+            let updateFields: { [key: string]: any } = { username, email, description, avatar };
+
+            for (let [key, value] of Object.entries(updateFields)) {
+                if (value !== null && value !== undefined && value !== "") {
+                    updateFields[key] = value;
+                } else {
+                    delete updateFields[key];
+                }
+            }
+
+            if (Object.keys(updateFields).length > 0) {
+                let updateQuery = {
+                    $set: updateFields,
+                }
+
+                let result = await localUserModel.updateOne(filterQuery, updateQuery);
+                if (result) {
+                    console.log(`${result.matchedCount} document(s) matched the filter criteria.`);
+                    console.log(`${result.modifiedCount} document(s) was/were updated.`);
+                }
+            };
+
+            if (username) {
+                let userResult = await localUserModel.findOne({
+                    $or: [
+                        { username: username },
+                        { username: user }
+                    ]
+                })
+                if (userResult) {
+                    for (let i = 0; i < userResult.friendships.length; i++) {
+                        let friendUsername = userResult.friendships[i].username;
+                        let friend = await localUserModel.findOne({
+                            username: friendUsername,
+                        })
+                        if (friend) {
+                            for (let i = 0; i < friend.friendships.length; i++) {
+                                if (userResult.username === username) {
+                                    await localUserModel.updateOne(
+                                        { 'friendships.username': user },
+                                        { $set: { 'friendships.$.username': username } }
+                                    )
+
+                                    let friendshipQuery = {
+                                        $or: [
+                                            { "requester.username": user },
+                                            { "receiver.username": user }
+                                        ]
+                                    };
+
+                                    let friendshipField = friendshipQuery["$or"][i]["requester.username"] === user
+                                        ? "requester.username"
+                                        : "receiver.username";
+
+                                    let friendshipUpdate = {
+                                        $set: {
+                                            [friendshipField]: username
+                                        }
+                                    };
+
+                                    await friendshipModel.updateMany(friendshipQuery, friendshipUpdate)
+
+                                    let chatQuery = {
+                                        "members.username": user,
+                                    };
+
+                                    let chatUpdate = {
+                                        $set: {
+                                            "members.$.username": username,
+                                        },
+                                    };
+
+                                    await chatModel.updateMany(chatQuery, chatUpdate);
+
+                                    let messageQuery = {
+                                        "messages.username": user,
+                                    }
+
+                                    let messagesUpdate = {
+                                        $set: {
+                                            "messages.$.username": username,
+                                        },
+                                    }
+
+                                    await chatModel.updateMany(messageQuery, messagesUpdate);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (email) {
+                let userResult = await localUserModel.findOne({
+                    $or: [
+                        { username: username },
+                        { username: user }
+                    ]
+                })
+                if (userResult) {
+                    let userResultEmail = userResult.email;
+
+                    if (username) {
+                        const documentToUpdate = await friendshipModel.findOne({
+                            $or: [
+                                { "requester.username": username },
+                                { "receiver.username": username }
+                            ]
+                        });
+
+                        // Determine whether to update requester.email or receiver.email based on the found document
+                        let updateField;
+                        if (documentToUpdate && documentToUpdate.requester && documentToUpdate.requester.username === username) {
+                            updateField = "requester.email";
+                        } else if (documentToUpdate && documentToUpdate.receiver && documentToUpdate.receiver.username === username) {
+                            updateField = "receiver.email";
+                        }
+
+                        // Update the email address
+                        if (updateField && documentToUpdate) {
+                            const result = await friendshipModel.updateOne(
+                                { _id: documentToUpdate._id },
+                                { $set: { [updateField]: email } }
+                            );
+                        }
+                    } else {
+                        const documentToUpdate = await friendshipModel.findOne({
+                            $or: [
+                                { "requester.username": user },
+                                { "receiver.username": user }
+                            ]
+                        });
+
+                        // Determine whether to update requester.email or receiver.email based on the found document
+                        let updateField;
+                        if (documentToUpdate && documentToUpdate.requester && documentToUpdate.requester.username === user) {
+                            updateField = "requester.email";
+                        } else if (documentToUpdate && documentToUpdate.receiver && documentToUpdate.receiver.username === user) {
+                            updateField = "receiver.email";
+                        }
+
+                        // Update the email address
+                        if (updateField && documentToUpdate) {
+                            const result = await friendshipModel.updateOne(
+                                { _id: documentToUpdate._id },
+                                { $set: { [updateField]: email } }
+                            );
+                        }
+                    }
+
+                    let chatQuery = {
+                        $or: [
+                            { "members.username": user },
+                            { "members.username": username },
+                        ]
+                    };
+
+                    let chatUpdate = {
+                        $set: {
+                            "members.$.email": userResultEmail,
+                        },
+                    };
+
+                    await chatModel.updateMany(chatQuery, chatUpdate);
+                }
+            }
+        }
+        catch (err: any) {
             return null;
         }
     }
 
+    /**
+     * @param username: string
+     * @returns void
+     * 
+     * Function for removing an user from db
+     */
+    export async function deleteLocalUser(username: string): Promise<boolean | null | undefined> {
+        try {
+            let userResult = await localUserModel.findOne({
+                username: username,
+            })
+            if (userResult) {
+                for (let i = 0; i < userResult.friendships.length; i++) {
+                    let friendUsername = userResult.friendships[i].username;
+                    let friend = await localUserModel.findOne({
+                        username: friendUsername,
+                    })
+                    if (friend) {
+                        // for (let i = 0; i < friend.friendships.length; i++) {
+                        //     if (userResult.username === username) {
+                        //         await localUserModel.deleteOne(
+                        //             { 'friendships.username': username },
+                        //         )
+
+                        //         let friendshipQuery = {
+                        //             $or: [
+                        //                 { "requester.username": username },
+                        //                 { "receiver.username": username }
+                        //             ]
+                        //         };
+
+                        //         let friendshipField = friendshipQuery["$or"][i]["requester.username"] === username
+                        //             ? "requester.username"
+                        //             : "receiver.username";
+
+                        //         let friendshipUpdate = {
+                        //             $set: {
+                        //                 [friendshipField]: username
+                        //             }
+                        //         };
+
+                        //         await friendshipModel.deleteMany(friendshipQuery, friendshipUpdate)
+
+                        //         let chatQuery = {
+                        //             "members.username": username,
+                        //         };
+
+                        //         await chatModel.deleteMany(chatQuery);
+                        //     }
+                        // }
+                    }
+                }
+            }
+            await localUserModel.deleteOne({ username: username });
+            return true;
+        } catch (err: any) {
+            console.error(err);
+            return null;
+        }
+    }
 
     /**
      * @param user: string

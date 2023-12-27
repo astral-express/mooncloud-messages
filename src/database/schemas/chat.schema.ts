@@ -2,13 +2,13 @@ import mongoose from "mongoose";
 
 type membersType = [
     {
-        user: string,
+        username: string,
         avatar: string,
         email: string,
         status: string,
     },
     {
-        user: string,
+        username: string,
         avatar: string,
         email: string,
         status: string,
@@ -17,7 +17,7 @@ type membersType = [
 
 type messagesType = {
     message_id: string,
-    user: string,
+    username: string,
     message: string,
     dateSent: string,
     dateRead: string,
@@ -26,13 +26,13 @@ type messagesType = {
 let membersSchema = new mongoose.Schema<membersType>(
     [
         {
-            user: String,
+            username: String,
             avatar: String,
             email: String,
             status: String,
         },
         {
-            user: String,
+            username: String,
             avatar: String,
             email: String,
             status: String,
@@ -42,7 +42,7 @@ let membersSchema = new mongoose.Schema<membersType>(
 
 let messagesSchema = new mongoose.Schema<messagesType>({
     message_id: String,
-    user: String,
+    username: String,
     message: String,
     dateSent: String,
     dateRead: String,

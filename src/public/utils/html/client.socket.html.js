@@ -3,9 +3,7 @@ import {
   chatTabRefresh,
   notificationsTabRefresh,
 } from "./empty_tabs_controller.html.js";
-
 import { checkIfItsAlphabeticalOrNumeralChar } from "./char_checker.html.js";
-
 import { avatarValidation } from "./avatar_validation.html.js";
 
 // DOM Selectors
@@ -24,9 +22,11 @@ let activePill;
 let messageCounter = 0;
 let messageNavbarCounter = 0;
 let currentURL = window.location.pathname;
+let imageBase64Data;
+let sessionID;
 
 function created() {
-  const sessionID = localStorage.getItem("sessionID");
+  sessionID = localStorage.getItem("sessionID");
   if (sessionID) {
     socket.auth = { sessionID };
     socket.connect();
@@ -111,6 +111,10 @@ socket.on("loaded-user-data", ({ result }) => {
 
 socket.on("is-password-changed", ({ isChanged }) => {
   oldPasswordFeedback(isChanged);
+});
+
+socket.on("refresh-user-profile", ({ updatedUser }) => {
+  loadUserSettingsData(updatedUser);
 });
 
 /**
@@ -421,8 +425,8 @@ function appendSentMessage(message, chatID, messageID, dateSent, dateRead) {
 
 function chatMessagesLoad(chatData) {
   for (let i = 0; i < chatData.members.length; i++) {
-    if (chatData.members[i].user !== socket.username) {
-      socket.friend = chatData.members[i].user;
+    if (chatData.members[i].username !== socket.username) {
+      socket.friend = chatData.members[i].username;
     }
   }
   let isChatLoaded = document.querySelectorAll(
@@ -434,7 +438,7 @@ function chatMessagesLoad(chatData) {
     if (socket.friend === friend) {
       if (loaded === "0") {
         for (let i = 0; i < chatData.messages.length; i++) {
-          if (chatData.messages[i].user === socket.username) {
+          if (chatData.messages[i].username === socket.username) {
             appendSentMessage(
               chatData.messages[i].message,
               chatData.chatID,
@@ -443,10 +447,10 @@ function chatMessagesLoad(chatData) {
               chatData.messages[i].dateRead
             );
           } else {
-            socket.friend = chatData.messages[i].user;
+            socket.friend = chatData.messages[i].username;
             appendReceivedMessage(
               chatData.messages[i].message,
-              chatData.messages[i].user,
+              chatData.messages[i].username,
               chatData.chatID,
               chatData.messages[i].message_id,
               chatData.messages[i].dateSent,
@@ -466,10 +470,10 @@ function chatsListLoad(chatsData, user, friend, request) {
   for (let i = 0; i < chatsData.length; i++) {
     let userObj = {};
     for (let x = 0; x < chatsData[i].members.length; x++) {
-      if (chatsData[i].members[x].user !== socket.username) {
+      if (chatsData[i].members[x].username !== socket.username) {
         userObj = {
           chatID: chatsData[i].chatID,
-          name: chatsData[i].members[x].user,
+          name: chatsData[i].members[x].username,
           avatar: chatsData[i].members[x].avatar,
         };
       }
@@ -480,7 +484,7 @@ function chatsListLoad(chatsData, user, friend, request) {
         lastMessage: "",
       };
     } else {
-      if (chatsData[i].last_message.user === socket.username) {
+      if (chatsData[i].last_message.username === socket.username) {
         lastMsgObj = {
           sender: "You:",
           lastMessage: chatsData[i].last_message.message,
@@ -689,7 +693,7 @@ function checkIfMessageWasRead(chatID) {
         }
       }
     }
-  }
+  } else return;
 }
 
 function sentMessageInfoMark(result) {
@@ -737,7 +741,7 @@ function scrollController() {
 
 function notificationsController(data) {
   if (data) {
-    let notificationsTab = document.getElementById("notifications_tab");
+    let notificationsTab = document.getElementById("notifications_rows");
     let notificationsCounter = document.getElementById("notifications-count");
     notificationsCounter.textContent = data.length;
     notificationsTab.innerHTML = data
@@ -832,7 +836,7 @@ function notificationsButtonsController() {
 }
 
 function removeNotification(result) {
-  let notificationsTab = document.getElementById("notifications_tab");
+  let notificationsTab = document.getElementById("notifications_rows");
   let friendListRow = notificationsTab.querySelectorAll("#notification_row");
   for (let i = 0; i < friendListRow.length; i++) {
     let username =
@@ -846,7 +850,7 @@ function removeNotification(result) {
 }
 
 function checkIfNotificationsAreEmpty() {
-  const notificationsTab = document.getElementById("notifications_tab");
+  const notificationsTab = document.getElementById("notifications_rows");
   const notificationCount = document.getElementById("notifications-count");
   notificationsTab.classList.add(
     "d-flex",
@@ -1047,44 +1051,6 @@ function openSelectedChat(friend) {
   bootstrap.Tab.getInstance(friendListRow).show();
 }
 
-function avatarPreviewController() {
-  let settingsAvatarPreview = document.getElementById(
-    "settings_avatar_form_control"
-  );
-  let settingsUploadedUserAvatar = document.getElementById(
-    "settings_uploaded_user_avatar"
-  );
-  let settingsRemoveUploadedUserAvatar = document.getElementById(
-    "settings_remove_uploaded_user_avatar"
-  );
-  let settingsErrorMessage = document.getElementById(
-    "settings_avatar_error_message"
-  );
-
-  settingsUploadedUserAvatar.addEventListener("change", () => {
-    preloadAvatar(settingsUploadedUserAvatar, settingsAvatarPreview);
-  });
-
-  settingsRemoveUploadedUserAvatar.addEventListener("click", (e) => {
-    settingsAvatarPreview.src = "assets/users/default/default_user_avatar.jpg";
-  });
-
-  let preloadAvatar = (settingsUploadedUserAvatar, settingsAvatarPreview) => {
-    let file = settingsUploadedUserAvatar.files[0];
-    let reader = new FileReader();
-    let isValidated = avatarValidation(file);
-
-    if (isValidated === true) {
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        settingsAvatarPreview.src = reader.result;
-      };
-    } else {
-      settingsErrorMessage.textContent = isValidated;
-    }
-  };
-}
-
 function loadUserSettingsData(user) {
   if (user) {
     let settingsTab = document.getElementById("settings_tab");
@@ -1191,7 +1157,7 @@ function loadUserSettingsData(user) {
             </div>
             <div id="settings_details_right_divider"
                 class="right-divider d-flex justify-content-center align-items-center mx-auto ps-2">
-                <img id="settings_avatar_form_control" class="me-1" src="assets/users/default/class="me-1" src="assets/users/default/default_user_avatar.jpg"
+                <img id="settings_avatar_form_control" class="me-1" src="assets/users/default/default_user_avatar.jpg"
                     alt="settings-default-user-avatar" />
                 <div class="btn-group">
                     <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown"
@@ -1248,22 +1214,63 @@ function loadUserSettingsData(user) {
     avatarPreviewController();
     userSettingsController();
     changePasswordController();
+    removeAccount();
   }
 }
 
-function userSettingsController() {
-  const usernameInput = document.getElementById(
-    "settings_username_form_control"
+function avatarPreviewController() {
+  let settingsAvatarPreview = document.getElementById(
+    "settings_avatar_form_control"
   );
-  const emailInput = document.getElementById("settings_email_form_control");
+  let settingsUploadedUserAvatar = document.getElementById(
+    "settings_uploaded_user_avatar"
+  );
+  let settingsRemoveUploadedUserAvatar = document.getElementById(
+    "settings_remove_uploaded_user_avatar"
+  );
+  let settingsErrorMessage = document.getElementById(
+    "settings_avatar_error_message"
+  );
+
+  settingsUploadedUserAvatar.addEventListener("change", () => {
+    preloadAvatar(settingsUploadedUserAvatar, settingsAvatarPreview);
+  });
+
+  settingsRemoveUploadedUserAvatar.addEventListener("click", () => {
+    if (settingsUploadedUserAvatar.files[0] !== undefined) {
+      settingsUploadedUserAvatar.value = "";
+      settingsAvatarPreview.src =
+        "assets/users/default/default_user_avatar.jpg";
+    } else {
+      settingsAvatarPreview.src =
+        "assets/users/default/default_user_avatar.jpg";
+    }
+  });
+
+  let preloadAvatar = (settingsUploadedUserAvatar, settingsAvatarPreview) => {
+    let file = settingsUploadedUserAvatar.files[0];
+    let reader = new FileReader();
+    let isValidated = avatarValidation(file);
+
+    if (isValidated === true) {
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        imageBase64Data = e.target.result.split(",")[1];
+        settingsAvatarPreview.src = reader.result;
+      };
+    } else {
+      settingsErrorMessage.textContent = isValidated;
+    }
+  };
+}
+
+function userSettingsController() {
   const bioInput = document.getElementById("settings_bio_form_control");
-  const avatarUpload = document.getElementById("settings_avatar_form_control");
   const textareaNumCounter = document.getElementById("textarea_num_counter");
   const textareaMaxCharWarning = document.getElementById(
     "textarea_max_char_warning"
   );
   const updateProfileBtn = document.getElementById("settings_update_profile");
-  const emailFeedback = document.getElementById("settings_email_notification");
 
   bioInput.addEventListener("keyup", () => {
     let bioInputCharacters = bioInput.value.length;
@@ -1280,11 +1287,16 @@ function userSettingsController() {
     }
   });
 
+  const emailInput = document.getElementById("settings_email_form_control");
+  const emailFeedback = document.getElementById("settings_email_notification");
   emailInput.addEventListener("keyup", () => {
     let isEmailValidated = emailValidation(emailInput.value);
     if (isEmailValidated === false) {
       emailFeedback.textContent = "This email address is not valid";
       updateProfileBtn.disabled = true;
+    } else {
+      emailFeedback.textContent = "";
+      updateProfileBtn.disabled = false;
     }
     if (emailInput.value.length <= 0) {
       emailFeedback.textContent = "";
@@ -1292,17 +1304,59 @@ function userSettingsController() {
     }
   });
 
+  const usernameInput = document.getElementById(
+    "settings_username_form_control"
+  );
   const usernameNotification = document.getElementById(
     "settings_username_notification"
   );
   usernameInput.addEventListener("keyup", () => {
     let filteredUsername = usernameInput.value.trim().toLowerCase();
     let isUsernameValidated = usernameValidation(filteredUsername);
-    if (filteredUsername.length <= 0) {
-      usernameNotification.textContent = "";
-    }
+
     if (isUsernameValidated === true) {
       updateProfileBtn.disabled = false;
+    } else {
+      updateProfileBtn.disabled = true;
+    }
+    if (filteredUsername.length <= 0) {
+      usernameNotification.textContent = "";
+      updateProfileBtn.disabled = false;
+    }
+  });
+
+  updateProfileBtn.addEventListener("click", () => {
+    const avatarUpload = document.getElementById(
+      "settings_uploaded_user_avatar"
+    );
+    const currentAvatar = document.getElementById(
+      "settings_avatar_form_control"
+    );
+    let usernameValue = usernameInput.value.trim().toLowerCase();
+    let emailValue = emailInput.value;
+    let bioValue = bioInput.value;
+    let avatarValue;
+    if (avatarUpload.files[0] !== undefined) {
+      avatarValue = avatarUpload.files[0].name;
+    } else {
+      avatarValue = currentAvatar.src;
+    }
+    if (
+      usernameValue ||
+      emailValue ||
+      bioValue ||
+      avatarValue ||
+      imageBase64Data
+    ) {
+      socket.emit(
+        "update-user-profile",
+        socket.username,
+        usernameValue,
+        emailValue,
+        bioValue,
+        avatarValue,
+        imageBase64Data
+      );
     }
   });
 }
@@ -1499,6 +1553,27 @@ function oldPasswordFeedback(feedback) {
   oldPasswordInput.addEventListener("change", () => {
     oldPasswordSpanInvalidFeedback.textContent = "";
   });
+}
+
+function removeAccount() {
+  const removeAccountButton = document.getElementById("remove_account_btn");
+  removeAccountButton.addEventListener("click", (e) => {
+    let approval = true;
+    localStorage.removeItem("sessionID");
+    deleteAllCookies();
+    socket.emit("remove-account", approval, socket.username);
+  });
+}
+
+function deleteAllCookies() {
+  const cookies = document.cookie.split(";");
+
+  for (let i = 0; i < cookies.length; i++) {
+    const cookie = cookies[i];
+    const eqPos = cookie.indexOf("=");
+    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  }
 }
 
 // EVENT LISTENERS
