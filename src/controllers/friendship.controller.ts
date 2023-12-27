@@ -4,21 +4,23 @@ import { friendshipModel } from "../database/schemas/friendship.schema";
 
 export namespace FriendshipController {
 
-    type FriendshipsArray = {
+    type FriendshipsData = {
+        friendship_id: String,
         username: String,
         status: Number,
     }
 
     /**
      * @param user: string
+     * @param friendshipID: array
      * @returns array
      * 
-     * Function that takes a requester (users username) and a receiver (users username)
-     * as arguments in order to check if their friendship exists,
-     * if it does, it returns friendship's ID as string
+     * Function that takes a users username or friendshipID
+     * as arguments in order to check if friendship exists,
+     * if it does, it returns array of friendship data
      */
-    export async function findFriendships(user: string, friendshipID?: string): Promise<FriendshipsArray[] | null | undefined> {
-        let friendshipsData: FriendshipsArray[] = [];
+    export async function findFriendships(user: string, friendshipID?: string): Promise<FriendshipsData[] | null | undefined> {
+        let friendshipsData: FriendshipsData[] = [];
         try {
             let query: any;
             if (friendshipID) {
@@ -33,12 +35,86 @@ export namespace FriendshipController {
             const friendshipsArray = firstElem.friendships;
             friendshipsArray.forEach(friendshipObj => {
                 friendshipsData.push({
+                    friendship_id: friendshipObj.friendship_id,
                     username: friendshipObj.username,
                     status: friendshipObj.status,
                 });
             })
             return friendshipsData.length > 0 ? friendshipsData : null;
         } catch (err: any) {
+            console.error(err);
+            return undefined;
+        }
+    }
+
+    type FriendshipsArray = {
+        friendship_id: String,
+        requester: String,
+        receiver: String,
+        status: Number,
+        description: String,
+    }
+
+    /**
+     * 
+     * @param multiQuery: String[]
+     * @returns array
+     * 
+     * Takes array of string as query and returns data,
+     * returned data is sorted into array that is returned
+     * to the function that called it
+     */
+    export async function findFriendshipsViaIDs(multiQuery: String[]): Promise<FriendshipsArray[] | null | undefined> {
+        let friendshipsArray: FriendshipsArray[] = [];
+        try {
+            let query: any;
+            query = {
+                friendship_id: {
+                    $in: multiQuery,
+                }
+            }
+            let friendships = await friendshipModel.find(query);
+            for (let i = 0; i < friendships.length; i++) {
+                friendshipsArray.push({
+                    friendship_id: friendships[i].friendship_id,
+                    requester: friendships[i].requester.username,
+                    receiver: friendships[i].receiver.username,
+                    status: friendships[i].status,
+                    description: friendships[i].description,
+                })
+            }
+            return friendshipsArray.length > 0 ? friendshipsArray : null;
+        } catch (err: any) {
+            console.error(err);
+            return undefined;
+        }
+    }
+
+    type FriendshipObject = {
+        friendship_id: String,
+        requester: String,
+        receiver: String,
+    }
+
+    export async function findAFriendshipViaRequester(requester: string, receiver: string): Promise<FriendshipObject[] | undefined> {
+        let friendshipObject: FriendshipObject[] = [];
+        try {
+            let query: any;
+            query = {
+                'requester.username': requester,
+                'receiver.username': receiver
+            }
+            let friendship = await friendshipModel.findOne(query);
+            if (friendship) {
+                friendshipObject.push({
+                    friendship_id: friendship.friendship_id,
+                    requester: friendship.requester.username,
+                    receiver: friendship.receiver.username,
+                })
+            }
+            return friendshipObject;
+        } catch (err: any) {
+            console.error(err);
             return undefined;
         }
     }
@@ -134,27 +210,59 @@ export namespace FriendshipController {
     }
 
     /**
-     * @param friendship_id: string
-     * @returns: boolean
+     * @param friendship: FriendshipObject[]
+     * @returns: string
      * 
      * If a user doesn't accepts a request from a friend, 
      * the friendship placeholder that was recorded when friend
      * request was send is going to be deleted
      */
-    export async function rejectFriend(friendship_id: string): Promise<boolean | undefined> {
+    export async function rejectFriend(friendship: FriendshipObject[] | undefined): Promise<string | null | undefined> {
         try {
-            let friendshipID = await friendshipModel.findOne({
-                _id: friendship_id,
-            });
-            if (friendshipID !== null || undefined) {
-                await friendshipModel.findOneAndDelete(
-                    {
-                        _id: friendshipID,
-                    },
-                );
-                return true;
-            } else {
-                return false;
+            let friendshipID: any;
+            let requester: any;
+            let receiver: any;
+            if (friendship) {
+                for (let i = 0; i < friendship.length; i++) {
+                    friendshipID = friendship[i].friendship_id;
+                    requester = friendship[i].requester;
+                    receiver = friendship[i].receiver;
+                }
+
+                const friendshipQuery = {
+                    friendship_id: friendshipID,
+                }
+                await friendshipModel.deleteOne(friendshipQuery)
+
+                const requesterQuery = {
+                    username: requester,
+                }
+                const requesterQueryUpdate = {
+                    $pull: {
+                        friendships: {
+                            username: receiver,
+                        }
+                    }
+                }
+                let requesterQueryResult = await localUserModel.updateOne(requesterQuery, requesterQueryUpdate)
+
+                const receiverQuery = {
+                    username: receiver,
+                }
+                const receiverQueryUpdate = {
+                    $pull: {
+                        friendships: {
+                            username: requester,
+                        }
+                    }
+                }
+                let receiverQueryResult = await localUserModel.updateOne(receiverQuery, receiverQueryUpdate)
+
+                if (requesterQueryResult.matchedCount === 1 && receiverQueryResult.matchedCount === 1) {
+                    return requester;
+                } else {
+                    return null;
+                }
             }
         }
         catch (err: any) {
@@ -193,78 +301,68 @@ export namespace FriendshipController {
     }
 
     /**
-     * @param friendship_id: string
-     * @returns: boolean
+     * @param friendship: FriendshipObject[]
+     * @returns: string
      * 
      * When a user clicks to accept a friend, function takes in user's friendshipID,
      * and changes its status to Accepted, while also adds a new record 
      * in user's friendship array adding that friend's ID
      */
-    export async function acceptFriend(friendship_id: string): Promise<boolean | undefined> {
+    export async function acceptFriend(friendship: FriendshipObject[] | undefined): Promise<string | null | undefined> {
         try {
-            let friendshipID = await friendshipModel.findOne({
-                _id: friendship_id,
-            });
-            if (friendshipID !== null || undefined) {
-                let requesterID = friendshipID?.requester;
-                let receiverID = friendshipID?.receiver;
+            let friendshipID: any;
+            let requester: any;
+            let receiver: any;
+            if (friendship) {
+                for (let i = 0; i < friendship.length; i++) {
+                    friendshipID = friendship[i].friendship_id;
+                    requester = friendship[i].requester;
+                    receiver = friendship[i].receiver;
+                }
 
-                let requesterFriendshipResult = await checkIfFriendshipExists(requesterID?._id, friendship_id);
-                if (requesterFriendshipResult === true) return false;
-                let receiverFriendshipResult = await checkIfFriendshipExists(receiverID?._id, friendship_id);
-                if (receiverFriendshipResult === true) return false;
-
-                let requester = await localUserModel.findOne({
-                    _id: requesterID?._id,
-                })
-
-                let receiver = await localUserModel.findOne({
-                    _id: receiverID?._id,
-                })
-
-                await localUserModel.findOneAndUpdate({
-                    _id: requesterID,
-                },
-                    {
-                        $push: {
-                            friendships: {
-                                friendship_id: friendshipID?._id,
-                                friend_id: receiver?._id,
-                                username: receiver?.username,
-                                email: receiver?.email,
-                                avatar: receiver?.avatar,
-                                added_at: Date.now(),
-                            },
-                        }
-                    }
-                )
-                await localUserModel.findOneAndUpdate({
-                    _id: receiverID,
-                },
-                    {
-                        $push: {
-                            friendships: {
-                                friendship_id: friendshipID?._id,
-                                friend_id: requester?._id,
-                                username: requester?.username,
-                                email: requester?.email,
-                                avatar: requester?.avatar,
-                                added_at: Date.now(),
-                            },
-                        }
-                    }
-                )
-                await friendshipModel.findOneAndUpdate({
-                    _id: friendshipID,
-                },
-                    {
+                const friendshipQuery = {
+                    friendship_id: friendshipID,
+                }
+                const friendshipQueryUpdate = {
+                    $set: {
                         status: 1,
                         description: "Accepted",
                     }
-                )
-                return true;
+                }
+                let friendshipQueryResult = await friendshipModel.updateOne(friendshipQuery, friendshipQueryUpdate)
+
+                const requesterQuery = {
+                    username: requester,
+                }
+                const requesterQueryUpdate = {
+                    $set: {
+                        "friendships.$[elem].status": 1,
+                    }
+                }
+                const requesterUpdateOptions = {
+                    arrayFilters: [{ "elem.username": receiver }]
+                };
+                let requesterQueryResult = await localUserModel.updateOne(requesterQuery, requesterQueryUpdate, requesterUpdateOptions)
+
+                const receiverQuery = { username: receiver, };
+                const receiverQueryUpdate = {
+                    $set: {
+                        "friendships.$[elem].status": 1,
+                    }
+                };
+                const receiverUpdateOptions = {
+                    arrayFilters: [{ "elem.username": requester }]
+                };
+                let receiverQueryResult = await localUserModel.updateOne(receiverQuery, receiverQueryUpdate, receiverUpdateOptions);
+
+                if (friendshipQueryResult.matchedCount === 1 && requesterQueryResult.matchedCount === 1 && receiverQueryResult.matchedCount === 1) {
+                    return requester;
+                } else {
+                    return null;
+                }
             }
-        } catch (err: any) {
+        }
+        catch (err: any) {
             return undefined;
         }
     }
@@ -321,19 +419,39 @@ export namespace FriendshipController {
      * 
      * Function that returns an array of friends from given username
      */
-    export async function getAllFriendsOfAUser(username: string): Promise<Array<Object> | null | undefined> {
+    export async function getAllFriends(username: string): Promise<Array<Object> | null | undefined> {
         try {
             let result = await localUserModel.findOne({
                 username: username,
             });
-            const friendshipsArray = result?.friendships;
-            if (!friendshipsArray) {
+            if (result) {
+                let friendUsernames = result.friendships
+                    .filter((friend) => friend.status === 1)
+                    .map((friend) => friend.username);
+                let friends = await localUserModel.find({
+                    username: { $in: friendUsernames },
+                })
+                if (friends) {
+                    let friendsArray = [];
+                    for (let i = 0; i < friends.length; i++) {
+                        friendsArray.push({
+                            userID: friends[i].userID,
+                            username: friends[i].username,
+                            avatar: friends[i].avatar,
+                            email: friends[i].email,
+                            status: friends[i].status,
+                            description: friends[i].description,
+                        })
+                    }
+                    return friendsArray.length > 0 ? friendsArray : null;
+                } else {
+                    return null;
+                }
+            } else {
                 return null;
             }
-            if (friendshipsArray?.length > 0) {
-                return friendshipsArray;
-            }
         } catch (err) {
+            console.error(err);
             return undefined;
         }
     }

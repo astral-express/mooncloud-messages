@@ -2,6 +2,7 @@ import { Router } from "express";
 import { loginRouter } from "./login.router";
 import { localSignupRouter } from "./signup.router";
 import { logoutRouter } from "./logout.router";
+import { checkIsNotAuthenticated } from "../controllers/auth.controller";
 
 const router = Router();
 
@@ -11,7 +12,6 @@ router.get("/", (req, res) => {
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
     }
     res.render("main", {
-        description: "Home",
         user: req.user,
         warning_email: false,
         warning_username: false,
@@ -23,12 +23,11 @@ router.get("/", (req, res) => {
 });
 
 /* GET home/login modal */
-router.get("/login", (req, res) => {
+router.get("/login", checkIsNotAuthenticated, (req, res) => {
     if (res.headersSent !== true) {
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
     }
     res.render("main", {
-        description: "Login",
         warning_email: req.flash("warning_email"),
         warning_password: req.flash("warning_password"),
         user_error_input: req.flash("error_input"),
@@ -38,12 +37,11 @@ router.get("/login", (req, res) => {
 });
 
 /* GET home/signup modal */
-router.get("/signup", (req, res) => {
+router.get("/signup", checkIsNotAuthenticated, (req, res) => {
     if (res.headersSent !== true) {
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
     }
     res.render("main", {
-        description: "Sign up",
         user_exists: req.flash("user_exists"),
         warning_email: false,
         warning_username: false,

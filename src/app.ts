@@ -1,5 +1,6 @@
 import "dotenv/config";
 import "ejs";
+import fs from "fs";
 import express, { Application, Request, Response, NextFunction } from "express";
 import path from "path";
 import cookieParser from "cookie-parser";
@@ -20,7 +21,7 @@ import { Database } from "./database/mongodb.database";
 import mongoose from "mongoose";
 import flash from "express-flash";
 import methodOverride from "method-override";
-import "redis";
+// import "redis";
 import { Server } from "socket.io";
 import "socket.io-client";
 // import { RedisClient } from "./database/redis.database";
@@ -136,23 +137,28 @@ mongoose.connection.once("open", () => {
     io.use(async (socket, next) => {
         const sessionID = socket.request.session.id;
         if (sessionID) {
-            const result = await sessions.findOne({
-                _id: sessionID,
-            })
-            if (result) {
-                let session = result.session;
-                let parsedSession = JSON.parse(session);
-                let userID = parsedSession.passport.user;
-                const user = await localUserModel.findOne({
-                    _id: userID,
+            try {
+                const result = await sessions.findOne({
+                    _id: sessionID,
                 })
-                if (user) {
-                    socket.data.sessionID = sessionID;
-                    socket.data.userID = userID;
-                    socket.data.username = user?.username;
-                    return next();
+                if (result) {
+                    let session = result.session;
+                    let parsedSession = JSON.parse(session);
+                    let userID = parsedSession.passport.user;
+                    const user = await localUserModel.findOne({
+                        _id: userID,
+                    })
+                    if (user) {
+                        socket.data.sessionID = sessionID;
+                        socket.data.userID = userID;
+                        socket.data.username = user?.username;
+                        return next();
+                    }
+                    else throw new Error("No user found during SocketIO session search");
                 }
-                else throw new Error("No user found during SocketIO session search");
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
             }
         } else throw new Error("No sessionID found");
     })
@@ -172,19 +178,18 @@ mongoose.connection.once("open", () => {
         })
     })
 
-    /**
-     * On page load, call to pre-load friend list
-     */
-    io.on("connection", async (socket) => {
-        try {
-            let chatsData = await ChatController.findAllChatsOfAUser(`${socket.data.username}`);
-            if (chatsData) {
-                socket.emit("friend-list-rows-load", { chatsData })
-            } else return null;
-        } catch (err: any) {
-            console.error(err);
-            return undefined;
-        }
+    io.on("connection", (socket) => {
+        socket.on("load-user-data", async (user) => {
+            try {
+                let result = await LocalUsersController.getLocalUser(user);
+                if (result) {
+                    socket.emit("loaded-user-data", { result });
+                }
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
     })
 
     io.on("connection", (socket) => {
@@ -225,37 +230,136 @@ mongoose.connection.once("open", () => {
         })
     })
 
-    // io.on("connection", (socket) => {
-    //     socket.on("selected-user", async (receiverUsername) => {
-    //         let senderUsername: string = socket.data.username;
-    //         try {
-    //             let chatID = await ChatController.checkIfChatExists(senderUsername, receiverUsername);
-    //             if (!chatID) {
-    //                 let initiated = await ChatController.initiateChat(senderUsername, receiverUsername);
-    //                 console.log(initiated)
-    //                 if (!initiated) {
-    //                     return false;
-    //                 };
-    //                 socket.emit("initiate-chat", { initiated });
-    //             } else {
-    //                 let chatData = await ChatController.loadChat(chatID);
-    //                 socket.emit("loaded-chat", { chatData });
-    //             }
-    //         } catch (err) {
-    //             console.error(err);
-    //             return undefined;
-    //         }
-    //     }
-    //     )
-    // })
-
-    //SINGLE CHAT LOAD
     io.on("connection", (socket) => {
-        socket.on("load-chat", async (chatID) => {
+        socket.on("friend-request", async (user, target) => {
+            try {
+                let result = await FriendshipController.requestFriend(user, target);
+                if (result) {
+                    socket.emit("is-friend-request-successful", { result });
+                    socket.to(target).emit("new-friend-request", {
+                        from: user,
+                        to: target,
+                    })
+                }
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("check-friend-requests", async (user) => {
+            try {
+                let pendingFriendRequests;
+                let result = await FriendshipController.findFriendships(user);
+                if (result) {
+                    let multiQueryFriendships = [];
+                    for (let i = 0; i < result.length; i++) {
+                        if (result[i].status === 2) {
+                            multiQueryFriendships.push(result[i].friendship_id);
+                        }
+                    }
+                    let multiFriendshipData = await FriendshipController.findFriendshipsViaIDs(multiQueryFriendships);
+                    if (multiFriendshipData) {
+                        let multiQueryUsers = [];
+                        for (let i = 0; i < multiFriendshipData.length; i++) {
+                            if (multiFriendshipData[i].receiver === user) {
+                                multiQueryUsers.push(multiFriendshipData[i].requester);
+                            }
+                        }
+                        pendingFriendRequests = await LocalUsersController.getLocalUser("", multiQueryUsers);
+                    }
+                    socket.emit("pending-friend-requests", { pendingFriendRequests });
+                } else {
+                    pendingFriendRequests = null;
+                    socket.emit("pending-friend-requests", { pendingFriendRequests });
+                }
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
+    })
+
+    io.on("connection", async (socket) => {
+        socket.on("accept-friend-request", async (requester, receiver) => {
+            if (requester) {
+                try {
+                    let friendship = await FriendshipController.findAFriendshipViaRequester(requester, receiver);
+                    if (friendship) {
+                        let result = await FriendshipController.acceptFriend(friendship);
+                        if (result) {
+                            socket.to(requester).emit("is-friend-accepted", { result });
+                            socket.emit("is-friend-accepted", { result });
+                        }
+                    }
+                } catch (err: any) {
+                    console.error(err);
+                    return undefined;
+                }
+            }
+        })
+    })
+
+    io.on("connection", async (socket) => {
+        socket.on("decline-friend-request", async (requester, receiver) => {
+            if (requester) {
+                try {
+                    let friendship = await FriendshipController.findAFriendshipViaRequester(requester, receiver);
+                    let result = await FriendshipController.rejectFriend(friendship);
+                    socket.emit("is-friend-declined", { result });
+                } catch (err: any) {
+                    console.error(err);
+                    return undefined;
+                }
+            }
+        })
+    })
+
+    io.on("connection", async (socket) => {
+        socket.on("friend-list-refresh", async (user) => {
+            if (user) {
+                try {
+                    let friends = await FriendshipController.getAllFriends(user);
+                    if (friends) {
+                        socket.emit("friend-list-update", { friends });
+                    } else {
+                        socket.emit("friend-list-update", { friends });
+                    }
+                } catch (err: any) {
+                    console.error(err);
+                    return undefined;
+                }
+            }
+        })
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("initiate-chat", async (requesterUsername, receiverUsername) => {
+            try {
+                let chatID = await ChatController.checkIfChatExists(requesterUsername, receiverUsername);
+                if (!chatID) {
+                    let initiated = await ChatController.initiateChat(requesterUsername, receiverUsername);
+                    if (!initiated) {
+                        return null;
+                    };
+                }
+                socket.emit("open-initiated-chat", { requesterUsername, receiverUsername });
+            } catch (err) {
+                console.error(err);
+                return undefined;
+            }
+        }
+        )
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("request-single-chat-load", async (chatID) => {
             try {
                 let chatData = await ChatController.loadChat(chatID);
                 if (chatData) {
-                    socket.emit("loaded-chat", { chatData })
+                    socket.emit("single-chat-loaded-response", { chatData })
                 } else return null;
             }
             catch (err: any) {
@@ -265,27 +369,17 @@ mongoose.connection.once("open", () => {
         })
     })
 
-    io.on("connection", (socket) => {
-        socket.on("seen", async (chatID, messageID) => {
+    io.on("connection", async (socket) => {
+        socket.on("update-chat-list", async (user, friend, request) => {
             try {
-                let seenDate = await ChatController.updateIfMessageIsSeen(chatID, messageID);
-                // if(seenDate) {
-                //     socket.emit("update-seen-status", { chatID, seenDate });
-                // }
-            } catch (err: any) {
-                console.error(err);
-                return undefined;
-            }
-        })
-    })
-
-    io.on("connection", (socket) => {
-        socket.on("friend-request", async (user, target) => {
-            try {
-                let result = await FriendshipController.requestFriend(user, target);
-                if (result) {
-                    socket.emit("is-friend-request-successful", { result });
-                }
+                let chatsData = await ChatController.findAllChatsOfAUser(user);
+                if (chatsData) {
+                    if (request === null) {
+                        socket.emit("friend-chats-load", { chatsData, user, friend, request })
+                    } else {
+                        socket.emit("friend-chats-load", { chatsData, user, friend, request })
+                    }
+                } else return null;
             } catch (err: any) {
                 console.error(err);
                 return undefined;
@@ -306,14 +400,98 @@ mongoose.connection.once("open", () => {
         });
     });
 
-    // io.on("connection", (socket) => {
-    //     socket.on("check-friendship-status", async (username, friendshipID) => {
-    //         let status = await FriendshipController.findFriendship("", "", friendshipID);
-    //         if (status) {
-    //             socket.emit("friendship-status", { friendshipID, status, username });
-    //         }
-    //     })
-    // })
+    io.on("connection", (socket) => {
+        socket.on("old-password-change-input", async (user, password, newPassword) => {
+            try {
+                let isChanged;
+                let result = await LocalUsersController.checkLocalUserPassword(user, password);
+                if (result === true) {
+                    isChanged = await LocalUsersController.changeLocalUserPassword(user, newPassword);
+                } else isChanged = false;
+                socket.emit("is-password-changed", { isChanged });
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("update-user-profile", async (user, newUsername, newEmail, newBio, newAvatar, newAvatarBase64Data) => {
+            try {
+                let filteredOriginalAvatar = newAvatar.split("--");
+                let newAvatarName;
+                let filteredUserResultAvatarName;
+                let userResultAvatarName;
+                let defaultAvatarRegex = /.*\/default\/default_user_avatar.jpg/;
+                let newAvatarRegex = /(.*)uploads\/(.*)/;
+                let defaultAvatarMatch = newAvatar.match(defaultAvatarRegex);
+                let newAvatarMatch = newAvatar.match(newAvatarRegex);
+                let date = new Date().getTime();
+
+                let userResult = await LocalUsersController.getLocalUser(user);
+                if (userResult) {
+                    for (let i = 0; i < userResult.length; i++) {
+                        userResultAvatarName = userResult[i].avatar.toString();
+                        filteredUserResultAvatarName = userResultAvatarName.split("--");
+                    }
+                }
+                if (defaultAvatarMatch) {
+                    newAvatarName = "default_user_avatar.jpg";
+                }
+                else if (newAvatarMatch) {
+                    newAvatarName = date + "--" + newAvatarMatch[2];
+                } else {
+                    newAvatarName = date + "--" + newAvatar;
+                }
+                if (newAvatarBase64Data) {
+                    const avatarBuffer = Buffer.from(newAvatarBase64Data, 'base64');
+                    const filePath = path.join(__dirname, "./public/assets/users/uploads/");
+                    fs.writeFile(filePath + newAvatarName, avatarBuffer, (err) => {
+                        if (err) {
+                            console.error("Error saving the image:", err);
+                        }
+                    })
+                }
+                if (filteredUserResultAvatarName) {
+                    if (filteredUserResultAvatarName[1] === filteredOriginalAvatar[1]) {
+                        let result = await LocalUsersController.updateLocalUserInfo(user, newUsername, newEmail, newBio, userResultAvatarName);
+                        if (result === true) {
+                            if (newUsername) {
+                                let updatedUser = await LocalUsersController.getLocalUser(newUsername)
+                                socket.emit("refresh-user-profile", { updatedUser })
+                            } else {
+                                let updatedUser = await LocalUsersController.getLocalUser(user)
+                                socket.emit("refresh-user-profile", { updatedUser })
+                            }
+                        }
+                    } else {
+                        let result = await LocalUsersController.updateLocalUserInfo(user, newUsername, newEmail, newBio, newAvatarName);
+                        if (result === true) {
+                            if (newUsername) {
+                                let updatedUser = await LocalUsersController.getLocalUser(newUsername)
+                                socket.emit("refresh-user-profile", { updatedUser })
+                            } else {
+                                let updatedUser = await LocalUsersController.getLocalUser(user)
+                                socket.emit("refresh-user-profile", { updatedUser })
+                            }
+                        }
+                    }
+                }
+            } catch (err: any) {
+                console.error(err);
+                return undefined;
+            }
+        })
+    })
+
+    io.on("connection", (socket) => {
+        socket.on("remove-account", async (approval, user) => {
+            if (approval === true) {
+                let result = await LocalUsersController.deleteLocalUser(user);
+            }
+        })
+    })
 
     server.listen(port, "0.0.0.0", () => logger.info("Server running on port: " + port));
     server.on("error", onError);

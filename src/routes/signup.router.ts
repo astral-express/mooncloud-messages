@@ -38,7 +38,7 @@ router.post(
       await newUser.updateLocalUser(email, username, avatar);
       req.flash(
         "acc_created",
-        "Congratulations! Your account was successfully made, enter your credentials to login!"
+        "Your account was successfully made, enter your credentials to login!"
       );
       return res.redirect(301, "/login");
     } catch (err) {
