@@ -15,3 +15,9 @@ Written mainly in TypeScript, vanilla JavaScript and NodeJS as its (server) fram
 - [MongoDB Atlas] - database
 - [Bootstrap] - css framework
 - [Bootswatch - Vapor theme] - css theme for bootstrap
+
+## Known bugs
+- when user adds another user and initiates a chat, the other user doesn't get a chat section popout, page needs to be manually refreshed
+- message notification counter doesn't work as intended
+- notifications info about empty list pops out when there are multiple requests after a user is accepted as a friend
+- removed users might still be disaplyed in friend list
